@@ -706,7 +706,7 @@ let QUESTION_DATA_VERSION = null;
 
 async function loadQuestionData() {
   try {
-    const res = await fetch('./data/questions.json?_=' + Date.now(), { cache: 'no-cache' });
+    const res = await fetch('./questions.json?_=' + Date.now(), { cache: 'no-cache' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     BUNDLED_QUESTIONS = json.questions || [];
