@@ -704,12 +704,63 @@ function compareVersion(a, b) {
 let BUNDLED_QUESTIONS = [];
 let QUESTION_DATA_VERSION = null;
 
+// 問題データの正規化（choice1~4形式 と choices配列形式の両方に対応）
+function normalizeQuestion(q, i) {
+  // id: 小文字 id または大文字 ID → なければ自動生成
+  const id = q.id || q.ID ||
+    (q.examType + '_' + q.year + '_' + q.questionNo);
+
+  // choices: 配列形式 or choice1~4形式の両方に対応
+  let choices;
+  if (Array.isArray(q.choices) && q.choices.length > 0) {
+    choices = q.choices;
+  } else {
+    choices = [
+      String(q.choice1 || ''),
+      String(q.choice2 || ''),
+      String(q.choice3 || ''),
+      String(q.choice4 || ''),
+    ];
+  }
+
+  // correctAnswers: 数値配列 or 文字列（セミコロン・カンマ区切り対応）
+  let correctAnswers;
+  if (Array.isArray(q.correctAnswers)) {
+    correctAnswers = q.correctAnswers.map(Number);
+  } else {
+    const ca = String(q.correctAnswers || '1').trim();
+    const sep = ca.includes(';') ? ';' : ',';
+    correctAnswers = ca.split(sep).map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+    if (correctAnswers.length === 0) correctAnswers = [1];
+  }
+
+  // year: 数値に変換できれば数値、できなければ文字列のまま
+  let year = q.year;
+  const yearNum = Number(year);
+  if (!isNaN(yearNum) && String(year).trim() !== '') year = yearNum;
+
+  return {
+    id,
+    examType:     q.examType     || '',
+    year,
+    questionNo:   q.questionNo   || (i + 1),
+    subject:      q.subject      || '',
+    section:      q.section      || 'AM',
+    questionText: q.questionText || '',
+    choices,
+    correctAnswers,
+    explanation:  q.explanation  || '',
+    sourceUrl:    q.sourceUrl    || '',
+    sourcePdf:    q.sourcePdf    || '',
+  };
+}
+
 async function loadQuestionData() {
   try {
     const res = await fetch('./questions.json?_=' + Date.now(), { cache: 'no-cache' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
-    BUNDLED_QUESTIONS = json.questions || [];
+    BUNDLED_QUESTIONS = (json.questions || []).map(normalizeQuestion);
     QUESTION_DATA_VERSION = json.questionDataVersion || null;
     return true;
   } catch (e) {
