@@ -198,8 +198,59 @@
 
 <div class="container">
 
+  <!-- 初回セットアップ画面 -->
+  <div class="screen" id="screen-setup">
+    <div class="card" style="background: linear-gradient(135deg, #2c5f7c, #5a8fa8); color: white; margin-bottom: 20px;">
+      <h2 style="color: white; border-bottom-color: rgba(255,255,255,0.3);">⚙️ 初期設定</h2>
+      <p style="font-size: 14px; opacity: 0.9; margin-top: 4px;">学習を始める前に設定を確認してください。<br>あとから「設定」画面で変更できます。</p>
+    </div>
+
+    <div class="card">
+      <h2>① 試験種別</h2>
+      <div style="font-size: 13px; color: #4a5a6a; margin-bottom: 10px;">出題対象を絞り込みます。</div>
+      <div class="exam-option-list">
+        <label class="radio-row">
+          <input type="radio" name="setup-exam-type" value="all" checked>
+          <span>すべて（はりきゅう＋あマ指）</span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="setup-exam-type" value="hari_kyu">
+          <span>はり師きゅう師のみ</span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="setup-exam-type" value="amashi">
+          <span>あマ指のみ</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>② 選択肢のランダム表示</h2>
+      <div class="setting-row" style="border: none; padding: 0;">
+        <div>
+          <div class="lbl">ランダム表示</div>
+          <div class="desc">毎回、選択肢の順序を入れ替えます</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="setup-shuffle-choices">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>③ 出題しない年度</h2>
+      <div style="font-size: 13px; color: #4a5a6a; margin-bottom: 10px;">チェックした年度の問題は通常演習から除外されます。</div>
+      <div id="setup-year-list" style="max-height: 240px; overflow-y: auto;">
+        <div style="color: #7a8a99; text-align: center; padding: 16px;">読み込み中...</div>
+      </div>
+    </div>
+
+    <button class="btn full" onclick="completeSetup()" style="font-size: 16px; padding: 16px; margin-top: 4px;">設定を保存して始める →</button>
+  </div>
+
   <!-- ホーム画面 -->
-  <div class="screen active" id="screen-home">
+  <div class="screen" id="screen-home">
     <div id="paper-sessions-notice" style="display:none;">
       <!-- ここに紙試験の結果入力待ちセッションが表示される -->
     </div>
@@ -601,6 +652,15 @@
       </div>
     </div>
 
+
+    <div class="card">
+      <h2>出題しない年度</h2>
+      <div style="font-size: 13px; color: #4a5a6a; margin-bottom: 10px;">チェックした年度は通常演習から除外されます。</div>
+      <div id="settings-year-list" style="max-height: 240px; overflow-y: auto;">
+        <div style="color: #7a8a99; text-align: center; padding: 16px;">読み込み中...</div>
+      </div>
+    </div>
+
     <div class="card">
       <h2>忘却曲線設定</h2>
       <div class="setting-row">
@@ -644,7 +704,7 @@
       <h2>このアプリについて</h2>
       <div style="font-size: 13px; color: #4a5a6a; line-height: 1.7;">
         <p>はり師きゅう師・あマ指の国家試験対策学習アプリ</p>
-        <p style="margin-top: 8px;">バージョン: ver.2026.5.19</p>
+        <p style="margin-top: 8px;">バージョン: ver.2026.5.20</p>
         <p style="margin-top: 8px;" id="credit-author-name">制作者：75期生　藤本</p>
         <p id="credit-author-affiliation">大阪行岡医療専門学校長柄校　鍼灸科</p>
       </div>
@@ -688,7 +748,7 @@
 
 //=========================================================
 // アプリバージョン（更新年月日）
-const APP_VERSION = '2026.5.19';
+const APP_VERSION = '2026.5.20';
 
 // [A] 75e69c9fe38080e897a4e69cac (識別定数)
 const _mA = (function(){
@@ -862,7 +922,7 @@ const state = {
   questions: [],
   progress: {},
   memos: {},
-  settings: { shuffleChoices: false, examType: 'all' },
+  settings: { shuffleChoices: false, examType: 'all', excludeYears: [] },
   currentMode: null,
   currentSubject: null,
   questionQueue: [],
@@ -923,11 +983,22 @@ async function init() {
   const settingExam = await dbGet('settings', 'examType');
   if (settingExam) state.settings.examType = settingExam.value;
 
+  const settingExclude = await dbGet('settings', 'excludeYears');
+  if (settingExclude) state.settings.excludeYears = settingExclude.value || [];
+
   document.getElementById('set-shuffle-choices').checked = state.settings.shuffleChoices;
   document.getElementById('set-exam-type').value = state.settings.examType;
 
-  updateHomeStats();
+  // 初回セットアップ判定（initialSetupDone が未設定なら初回）
+  const setupDone = await dbGet('settings', 'initialSetupDone');
+  if (!setupDone) {
+    renderSetupYearList();
+    showScreen('setup', '初期設定', 'はじめに設定してください');
+    return;
+  }
 
+  updateHomeStats();
+  renderSettingsYearList();
 }
 
 //=========================================================
@@ -2156,14 +2227,15 @@ function reviewExamWrong() {
 function updateHomeStats() {
   const filtered = filterByExamType(state.questions);
   document.getElementById('stat-total').textContent = filtered.length;
-  document.getElementById('stat-answered').textContent = Object.keys(state.progress).length;
 
   const today = new Date().toISOString().slice(0, 10);
   const filteredIds = new Set(filtered.map(q => q.id));
 
-  const dueCount = Object.values(state.progress).filter(p => {
-    return filteredIds.has(p.questionId) && p.nextReviewAt && p.nextReviewAt <= today;
-  }).length;
+  // 解答済み・復習対象ともに除外年度を考慮
+  const filteredProgress = Object.values(state.progress).filter(p => filteredIds.has(p.questionId));
+  document.getElementById('stat-answered').textContent = filteredProgress.length;
+
+  const dueCount = filteredProgress.filter(p => p.nextReviewAt && p.nextReviewAt <= today).length;
   document.getElementById('stat-due').textContent = dueCount;
 
   // 紙試験セッション一覧を非同期で更新
@@ -2208,7 +2280,12 @@ async function updatePaperSessionsNotice() {
 
 function filterByExamType(questions) {
   // yearが数値以外の問題は本試験モード専用のため、通常モードから除外
-  const normalQuestions = questions.filter(q => !isNaN(Number(q.year)));
+  let normalQuestions = questions.filter(q => !isNaN(Number(q.year)));
+  // 除外年度フィルター
+  const excludeYears = state.settings.excludeYears || [];
+  if (excludeYears.length > 0) {
+    normalQuestions = normalQuestions.filter(q => !excludeYears.includes(Number(q.year)));
+  }
   if (state.settings.examType === 'all') return normalQuestions;
   return normalQuestions.filter(q => q.examType === state.settings.examType);
 }
@@ -2243,6 +2320,7 @@ function goHome() {
 function goSettings() {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('nav-settings').classList.add('active');
+  renderSettingsYearList();
   showScreen('settings', '設定', '');
 }
 
@@ -2793,6 +2871,98 @@ async function updateSetting(key, value) {
   state.settings[key] = value;
   await dbPut('settings', { key, value });
   if (key === 'examType') updateHomeStats();
+}
+
+//=========================================================
+// 初回セットアップ
+//=========================================================
+function getAvailableYears() {
+  // 通常問題（yearが数値）の年度一覧を試験種別ごとに取得
+  const yearSet = new Set();
+  state.questions.forEach(q => {
+    if (!isNaN(Number(q.year))) {
+      yearSet.add(JSON.stringify({ examType: q.examType, year: Number(q.year) }));
+    }
+  });
+  return Array.from(yearSet)
+    .map(s => JSON.parse(s))
+    .sort((a, b) => {
+      if (a.examType !== b.examType) return a.examType < b.examType ? -1 : 1;
+      return a.year - b.year;
+    });
+}
+
+function renderYearCheckList(containerId, excludeYears) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const years = getAvailableYears();
+  if (years.length === 0) {
+    container.innerHTML = '<div style="color:#7a8a99;text-align:center;padding:16px;">年度データがありません</div>';
+    return;
+  }
+  const typeLabels = { hari_kyu: 'はりきゅう', amashi: 'あマ指' };
+  let html = '';
+  let lastType = null;
+  years.forEach(({ examType, year }) => {
+    if (examType !== lastType) {
+      html += `<div style="font-size:11px;color:#7a8a99;font-weight:600;margin:8px 4px 4px;letter-spacing:1px;">━ ${typeLabels[examType] || examType}</div>`;
+      lastType = examType;
+    }
+    const checked = excludeYears.includes(year) ? 'checked' : '';
+    html += `
+      <label class="daily-subject-row" style="padding:8px 4px;">
+        <input type="checkbox" ${checked} data-year="${year}" data-examtype="${examType}"
+          style="width:20px;height:20px;accent-color:#c0504d;flex-shrink:0;"
+          onchange="onYearExcludeChange(this, '${containerId}')">
+        <span class="name">第${year}回（${typeLabels[examType] || examType}）</span>
+      </label>`;
+  });
+  container.innerHTML = html;
+}
+
+function onYearExcludeChange(cb, containerId) {
+  // 同じcontainer内の全チェックボックスから除外年度を収集（設定画面用即時保存）
+  if (containerId === 'settings-year-list') {
+    const allCbs = document.querySelectorAll('#settings-year-list input[type="checkbox"]');
+    const excludeYears = [];
+    allCbs.forEach(c => { if (c.checked) excludeYears.push(Number(c.dataset.year)); });
+    updateSetting('excludeYears', excludeYears);
+    updateHomeStats();
+  }
+}
+
+function renderSetupYearList() {
+  renderYearCheckList('setup-year-list', state.settings.excludeYears || []);
+}
+
+function renderSettingsYearList() {
+  renderYearCheckList('settings-year-list', state.settings.excludeYears || []);
+}
+
+async function completeSetup() {
+  // 試験種別
+  const examType = document.querySelector('input[name="setup-exam-type"]:checked').value;
+  // ランダム表示
+  const shuffle = document.getElementById('setup-shuffle-choices').checked;
+  // 除外年度
+  const allCbs = document.querySelectorAll('#setup-year-list input[type="checkbox"]');
+  const excludeYears = [];
+  allCbs.forEach(c => { if (c.checked) excludeYears.push(Number(c.dataset.year)); });
+
+  // 保存
+  await updateSetting('examType', examType);
+  await updateSetting('shuffleChoices', shuffle);
+  await updateSetting('excludeYears', excludeYears);
+  await dbPut('settings', { key: 'initialSetupDone', value: true });
+
+  // 設定画面のUIに反映
+  document.getElementById('set-shuffle-choices').checked = shuffle;
+  document.getElementById('set-exam-type').value = examType;
+
+  showToast('設定を保存しました');
+  renderSettingsYearList();
+  updateHomeStats();
+  goHome();
 }
 
 //=========================================================
