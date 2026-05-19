@@ -198,59 +198,8 @@
 
 <div class="container">
 
-  <!-- 初回セットアップ画面 -->
-  <div class="screen" id="screen-setup">
-    <div class="card" style="background: linear-gradient(135deg, #2c5f7c, #5a8fa8); color: white; margin-bottom: 20px;">
-      <h2 style="color: white; border-bottom-color: rgba(255,255,255,0.3);">⚙️ 初期設定</h2>
-      <p style="font-size: 14px; opacity: 0.9; margin-top: 4px;">学習を始める前に設定を確認してください。<br>あとから「設定」画面で変更できます。</p>
-    </div>
-
-    <div class="card">
-      <h2>① 試験種別</h2>
-      <div style="font-size: 13px; color: #4a5a6a; margin-bottom: 10px;">出題対象を絞り込みます。</div>
-      <div class="exam-option-list">
-        <label class="radio-row">
-          <input type="radio" name="setup-exam-type" value="all" checked>
-          <span>すべて（はりきゅう＋あマ指）</span>
-        </label>
-        <label class="radio-row">
-          <input type="radio" name="setup-exam-type" value="hari_kyu">
-          <span>はり師きゅう師のみ</span>
-        </label>
-        <label class="radio-row">
-          <input type="radio" name="setup-exam-type" value="amashi">
-          <span>あマ指のみ</span>
-        </label>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>② 選択肢のランダム表示</h2>
-      <div class="setting-row" style="border: none; padding: 0;">
-        <div>
-          <div class="lbl">ランダム表示</div>
-          <div class="desc">毎回、選択肢の順序を入れ替えます</div>
-        </div>
-        <label class="switch">
-          <input type="checkbox" id="setup-shuffle-choices">
-          <span class="slider"></span>
-        </label>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>③ 出題しない年度</h2>
-      <div style="font-size: 13px; color: #4a5a6a; margin-bottom: 10px;">チェックした年度の問題は通常演習から除外されます。</div>
-      <div id="setup-year-list" style="max-height: 240px; overflow-y: auto;">
-        <div style="color: #7a8a99; text-align: center; padding: 16px;">読み込み中...</div>
-      </div>
-    </div>
-
-    <button class="btn full" onclick="completeSetup()" style="font-size: 16px; padding: 16px; margin-top: 4px;">設定を保存して始める →</button>
-  </div>
-
   <!-- ホーム画面 -->
-  <div class="screen" id="screen-home">
+  <div class="screen active" id="screen-home">
     <div id="paper-sessions-notice" style="display:none;">
       <!-- ここに紙試験の結果入力待ちセッションが表示される -->
     </div>
@@ -708,9 +657,23 @@
         <p style="margin-top: 8px;" id="credit-author-name">制作者：75期生　藤本</p>
         <p id="credit-author-affiliation">大阪行岡医療専門学校長柄校　鍼灸科</p>
       </div>
+      <button class="btn outline full" onclick="openManual()" style="margin-top: 14px; font-size: 14px;">
+        📖 使用説明書を開く
+      </button>
     </div>
   </div>
 
+</div>
+
+<!-- 説明書モーダル -->
+<div class="modal-bg" id="manual-modal" style="padding: 0; align-items: stretch;">
+  <div style="background: white; width: 100%; max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; height: 100%;">
+    <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #2c5f7c; color: white; flex-shrink: 0;">
+      <span style="font-size: 16px; font-weight: 600; flex: 1;">📖 使用説明書</span>
+      <button onclick="closeManual()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 6px 14px; border-radius: 8px; font-size: 14px; cursor: pointer;">✕ 閉じる</button>
+    </div>
+    <iframe id="manual-frame" src="" style="flex: 1; border: none; width: 100%;" title="使用説明書"></iframe>
+  </div>
 </div>
 
 <!-- ボトムナビ -->
@@ -831,8 +794,8 @@ async function loadQuestionData() {
     QUESTION_DATA_VERSION = json.questionDataVersion || null;
     return true;
   } catch (e) {
-    console.error('問題データの読み込みに失敗:', e);
-    alert('問題データの読み込みに失敗しました。\nネットワーク接続を確認してください。\n\nエラー: ' + e.message);
+    // オフライン時など通信失敗はサイレントに処理（エラー表示しない）
+    console.warn('問題データの取得をスキップ（オフラインまたは通信エラー）:', e.message);
     return false;
   }
 }
@@ -940,33 +903,68 @@ const state = {
 async function init() {
   await openDB();
 
-  // 問題データを外部JSONから読み込み
-  const ok = await loadQuestionData();
-  if (!ok) {
-    // 読み込み失敗時はIndexedDBに残っている既存データで動作継続
-    state.questions = await dbGetAll('questions');
-    if (state.questions.length === 0) {
-      document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:sans-serif;"><h2>問題データを読み込めませんでした</h2><p>ネットワーク接続を確認のうえ、ページを再読み込みしてください。</p></div>';
-      return;
+  // 更新確認の間隔設定
+  // ネット接続成功時 → 48時間スキップ
+  // オフライン時    → 24時間後に再確認
+  const ONLINE_INTERVAL_MS  = 48 * 60 * 60 * 1000; // 48時間
+  const OFFLINE_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24時間
+
+  const lastCheckRec = await dbGet('settings', 'lastUpdateCheckedAt');
+  const lastOfflineRec = await dbGet('settings', 'lastOfflineCheckedAt');
+  const now = Date.now();
+
+  const lastOnlineCheck  = lastCheckRec   ? new Date(lastCheckRec.value).getTime()   : 0;
+  const lastOfflineCheck = lastOfflineRec ? new Date(lastOfflineRec.value).getTime() : 0;
+
+  // 前回オンライン確認から48時間 かつ 前回オフライン確認から24時間 経過していれば確認
+  const shouldCheck = (now - lastOnlineCheck >= ONLINE_INTERVAL_MS) &&
+                      (now - lastOfflineCheck >= OFFLINE_INTERVAL_MS);
+
+  if (shouldCheck) {
+    const online = await loadQuestionData();
+    if (online) {
+      // オンライン成功 → 48時間スキップ用タイムスタンプを更新
+      await dbPut('settings', { key: 'lastUpdateCheckedAt',  value: new Date().toISOString() });
+      await dbPut('settings', { key: 'lastOfflineCheckedAt', value: new Date().toISOString() });
+
+      // バージョン比較（questions.jsonのバージョン情報のみ使用）
+      const savedAppVer = await dbGet('settings', 'appVersion');
+      const savedQVer   = await dbGet('settings', 'questionDataVersion');
+      const appVerOld   = savedAppVer ? savedAppVer.value : null;
+      const qVerOld     = savedQVer   ? savedQVer.value   : null;
+      const appUpdated  = !appVerOld || compareVersion(APP_VERSION, appVerOld) > 0;
+      const qUpdated    = QUESTION_DATA_VERSION && (!qVerOld || compareVersion(QUESTION_DATA_VERSION, qVerOld) > 0);
+
+      if (appUpdated || qUpdated) {
+        // 更新あり → 問題データをIndexedDBに再投入して通知
+        const tx = db.transaction('questions', 'readwrite');
+        tx.objectStore('questions').clear();
+        await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
+        for (const q of BUNDLED_QUESTIONS) await dbPut('questions', q);
+        await dbPut('settings', { key: 'appVersion',          value: APP_VERSION });
+        if (QUESTION_DATA_VERSION)
+          await dbPut('settings', { key: 'questionDataVersion', value: QUESTION_DATA_VERSION });
+        showToast(`問題データを更新しました（ver.${QUESTION_DATA_VERSION || APP_VERSION}）`);
+      }
+      // 更新なし → 何も表示しない
+
+    } else {
+      // オフライン → 24時間後に再確認するためオフライン確認時刻だけ更新
+      await dbPut('settings', { key: 'lastOfflineCheckedAt', value: new Date().toISOString() });
+      console.info('オフラインのためキャッシュデータで動作します');
     }
-  } else {
-    // 問題データバージョン or アプリバージョン更新時は再投入
-    const savedAppVer = await dbGet('settings', 'appVersion');
-    const savedQVer = await dbGet('settings', 'questionDataVersion');
-    const appVerOld = savedAppVer ? savedAppVer.value : null;
-    const qVerOld = savedQVer ? savedQVer.value : null;
-    const appUpdated = !appVerOld || compareVersion(APP_VERSION, appVerOld) > 0;
-    const qUpdated = QUESTION_DATA_VERSION && (!qVerOld || compareVersion(QUESTION_DATA_VERSION, qVerOld) > 0);
-    if (appUpdated || qUpdated) {
-      showToast('問題データを更新中...');
-      const tx = db.transaction('questions', 'readwrite');
-      tx.objectStore('questions').clear();
-      await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
-      for (const q of BUNDLED_QUESTIONS) await dbPut('questions', q);
-      await dbPut('settings', { key: 'appVersion', value: APP_VERSION });
-      if (QUESTION_DATA_VERSION) await dbPut('settings', { key: 'questionDataVersion', value: QUESTION_DATA_VERSION });
-      showToast(`問題データを更新しました（ver.${QUESTION_DATA_VERSION || APP_VERSION}）`);
-    }
+  }
+  // スキップ条件内 → 何もせずキャッシュで動作継続
+
+  // IndexedDBからデータを取得（オフライン時もここで問題が取れる）
+  const cachedQuestions = await dbGetAll('questions');
+  if (cachedQuestions.length === 0) {
+    // 初回起動かつ完全オフラインでデータなし
+    document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:sans-serif;color:#2c3e50;">' +
+      '<div style="font-size:48px;margin-bottom:16px;">📶</div>' +
+      '<h2 style="margin-bottom:12px;">初回起動にはネット接続が必要です</h2>' +
+      '<p style="color:#7a8a99;">Wi-Fi等に接続してから再度お試しください。</p></div>';
+    return;
   }
 
   state.questions = await dbGetAll('questions');
@@ -988,14 +986,6 @@ async function init() {
 
   document.getElementById('set-shuffle-choices').checked = state.settings.shuffleChoices;
   document.getElementById('set-exam-type').value = state.settings.examType;
-
-  // 初回セットアップ判定（initialSetupDone が未設定なら初回）
-  const setupDone = await dbGet('settings', 'initialSetupDone');
-  if (!setupDone) {
-    renderSetupYearList();
-    showScreen('setup', '初期設定', 'はじめに設定してください');
-    return;
-  }
 
   updateHomeStats();
   renderSettingsYearList();
@@ -2324,6 +2314,20 @@ function goSettings() {
   showScreen('settings', '設定', '');
 }
 
+function openManual() {
+  const modal = document.getElementById('manual-modal');
+  const frame = document.getElementById('manual-frame');
+  // iframeに説明書をロード（同一リポジトリのmanual.html）
+  if (!frame.src || frame.src === window.location.href) {
+    frame.src = './manual.html';
+  }
+  modal.classList.add('show');
+}
+
+function closeManual() {
+  document.getElementById('manual-modal').classList.remove('show');
+}
+
 function goStats() {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('nav-stats').classList.add('active');
@@ -2931,38 +2935,8 @@ function onYearExcludeChange(cb, containerId) {
   }
 }
 
-function renderSetupYearList() {
-  renderYearCheckList('setup-year-list', state.settings.excludeYears || []);
-}
-
 function renderSettingsYearList() {
   renderYearCheckList('settings-year-list', state.settings.excludeYears || []);
-}
-
-async function completeSetup() {
-  // 試験種別
-  const examType = document.querySelector('input[name="setup-exam-type"]:checked').value;
-  // ランダム表示
-  const shuffle = document.getElementById('setup-shuffle-choices').checked;
-  // 除外年度
-  const allCbs = document.querySelectorAll('#setup-year-list input[type="checkbox"]');
-  const excludeYears = [];
-  allCbs.forEach(c => { if (c.checked) excludeYears.push(Number(c.dataset.year)); });
-
-  // 保存
-  await updateSetting('examType', examType);
-  await updateSetting('shuffleChoices', shuffle);
-  await updateSetting('excludeYears', excludeYears);
-  await dbPut('settings', { key: 'initialSetupDone', value: true });
-
-  // 設定画面のUIに反映
-  document.getElementById('set-shuffle-choices').checked = shuffle;
-  document.getElementById('set-exam-type').value = examType;
-
-  showToast('設定を保存しました');
-  renderSettingsYearList();
-  updateHomeStats();
-  goHome();
 }
 
 //=========================================================

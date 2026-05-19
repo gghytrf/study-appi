@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>国試学習アプリ 使用説明書 ver.2026.5.18</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@400;700&display=swap');
+
+  :root {
+    --primary: #2c5f7c;
+    --primary-light: #eef4f8;
+    --accent: #5a8fa8;
+    --gold: #c8963e;
+    --text: #1a2a35;
+    --text-muted: #5a7080;
+    --border: #d4dde4;
+    --bg: #f8fafb;
+    --white: #ffffff;
+    --green: #4caf50;
+    --orange: #ff9800;
+    --red: #f44336;
+    --purple: #2c5f7c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+    font-size: 14px;
+  }
+
+  /* 表紙 */
+  .cover {
+    background: linear-gradient(135deg, #1a3548 0%, #2c5f7c 50%, #3d7fa8 100%);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.05) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 70%, rgba(90,143,168,0.15) 0%, transparent 60%);
+  }
+  .cover-inner { position: relative; z-index: 1; max-width: 600px; }
+  .cover-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: 6px 20px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    margin-bottom: 32px;
+    color: rgba(255,255,255,0.85);
+  }
+  .cover h1 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+  }
+  .cover h1 span { color: #7ec8e3; }
+  .cover-sub {
+    font-size: 16px;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 24px;
+  }
+  .cover-version {
+    display: inline-block;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    padding: 4px 14px;
+    font-size: 12px;
+    font-family: 'Noto Serif JP', serif;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 36px;
+  }
+  .cover-features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .cover-feature {
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 16px 12px;
+    text-align: center;
+  }
+  .cover-feature .ico { font-size: 28px; margin-bottom: 8px; }
+  .cover-feature .lbl { font-size: 11px; color: rgba(255,255,255,0.8); }
+
+  /* 目次 */
+  .toc {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 60px 40px;
+  }
+  .toc h2 { font-size: 22px; color: var(--primary); margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid var(--primary); }
+  .toc-list { list-style: none; }
+  .toc-list li {
+    border-bottom: 1px dashed var(--border);
+    padding: 8px 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .toc-list li .num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--primary-light);
+    border-radius: 4px;
+    padding: 2px 7px;
+    flex-shrink: 0;
+  }
+  .toc-list li a {
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14px;
+  }
+  .toc-list li a:hover { color: var(--primary); }
+  .toc-list li .dots { flex: 1; border-bottom: 1px dotted var(--border); margin-bottom: 4px; }
+
+  /* セクション */
+  .section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--primary-light);
+  }
+  .section-num {
+    width: 48px;
+    height: 48px;
+    background: var(--primary);
+    color: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .section-header h2 { font-size: 24px; color: var(--primary); font-weight: 700; }
+
+  /* 手順 */
+  .step-list { display: flex; flex-direction: column; gap: 20px; }
+  .step {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    gap: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+  .step-num {
+    width: 32px;
+    height: 32px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-body h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--primary); }
+  .step-body p { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+
+  /* モード説明カード */
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .mode-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+  .mode-card .mode-icon { font-size: 28px; margin-bottom: 10px; }
+  .mode-card h3 { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+  .mode-card p { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+  .mode-card .tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: 8px;
+    font-weight: 700;
+  }
+  .tag-beginner { background: #e8f5e9; color: #2e7d32; }
+  .tag-review { background: #fff3e0; color: #e65100; }
+  .tag-advanced { background: #e3f2fd; color: #1565c0; }
+  .tag-exam { background: #f3e5f5; color: #6a1b9a; }
+  .tag-ai { background: #ede7f6; color: #4527a0; }
+
+  /* スクリーンモック */
+  .phone-mock {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+  }
+  .phone {
+    width: 300px;
+    background: white;
+    border: 2px solid #2c3e50;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  }
+  .phone-header {
+    background: var(--primary);
+    color: white;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .phone-body { padding: 12px; }
+
+  /* 統計ボックス */
+  .stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .stat-box {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+  }
+  .stat-box .val { font-size: 20px; font-weight: 700; color: var(--primary); }
+  .stat-box .lbl { font-size: 9px; color: var(--text-muted); }
+  .stat-box.orange .val { color: var(--orange); }
+  .stat-box.red .val { color: var(--red); }
+
+  /* メニューボタン */
+  .menu-btn-mock {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .menu-btn-mock .ico { font-size: 18px; }
+  .menu-btn-mock .info { display: flex; flex-direction: column; }
+  .menu-btn-mock .name { font-weight: 700; font-size: 12px; }
+  .menu-btn-mock .desc { font-size: 9px; color: var(--text-muted); }
+  .menu-btn-mock.exam-btn { background: linear-gradient(to right, #2c5f7c, #5a8fa8); color: white; border: none; }
+  .menu-btn-mock.exam-btn .name { color: white; }
+  .menu-btn-mock.exam-btn .desc { color: rgba(255,255,255,0.8); }
+
+  /* 注意・ポイント */
+  .callout {
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 20px 0;
+    display: flex;
+    gap: 12px;
+  }
+  .callout-info { background: #e3f2fd; border-left: 4px solid #1976d2; }
+  .callout-warn { background: #fff8e1; border-left: 4px solid #f9a825; }
+  .callout-tip { background: #e8f5e9; border-left: 4px solid #388e3c; }
+  .callout-new { background: #ede7f6; border-left: 4px solid #5e35b2; }
+  .callout .ico { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .callout .body h4 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .callout .body p { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+
+  /* 同梱データテーブル */
+  .bundle-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 16px 0 8px;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+  .bundle-table th {
+    background: var(--primary);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+  }
+  .bundle-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .bundle-table tr:nth-child(even) td { background: var(--primary-light); }
+  .bundle-table td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--primary); }
+  .bundle-table tfoot td { font-weight: 700; background: #1a3548 !important; color: white; }
+  .bundle-table tfoot td.num { color: #7ec8e3; }
+
+  /* 出題ロジック説明図 */
+  .logic-flow {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 20px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+  .logic-step {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 14px;
+    align-items: start;
+    padding: 12px 0;
+  }
+  .logic-step:not(:last-child) { border-bottom: 1px dashed var(--border); }
+  .logic-step .num-badge {
+    width: 32px; height: 32px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+    font-family: 'Noto Serif JP', serif;
+  }
+  .logic-step .desc-body h5 { font-size: 13px; color: var(--primary); margin-bottom: 4px; font-weight: 700; }
+  .logic-step .desc-body p { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+
+  /* 問題画面モック */
+  .q-mock {
+    background: var(--primary-light);
+    border-radius: 10px;
+    padding: 12px;
+    margin: 8px 0;
+    font-size: 11px;
+  }
+  .q-badge {
+    display: inline-block;
+    background: #5a4000;
+    color: #ffd54f;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 9px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .q-text { font-size: 12px; margin-bottom: 8px; font-weight: 500; }
+  .choice {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin-bottom: 4px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .choice.correct { background: #e8f5e9; border-color: #4caf50; }
+  .choice.wrong { background: #ffebee; border-color: #f44336; }
+  .choice.selected { background: var(--primary-light); border-color: var(--primary); }
+
+  /* 問題数選択ボタン */
+  .count-btn-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin: 12px 0;
+  }
+  .count-btn {
+    padding: 10px 0;
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text);
+  }
+  .count-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+  /* 設定画面モック */
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .setting-row .lbl { font-weight: 500; }
+  .setting-row .desc { font-size: 10px; color: var(--text-muted); }
+  .toggle {
+    width: 36px;
+    height: 20px;
+    background: var(--primary);
+    border-radius: 10px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    right: 3px;
+    top: 3px;
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+  }
+  .toggle.off { background: #ccc; }
+  .toggle.off::after { right: auto; left: 3px; }
+
+  /* 忘却曲線の説明 */
+  .curve-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 16px 0;
+  }
+  .curve-table th {
+    background: var(--primary);
+    color: white;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+  }
+  .curve-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .curve-table tr:nth-child(even) td { background: var(--primary-light); }
+  .lv-badge {
+    display: inline-block;
+    width: 52px;
+    text-align: center;
+    border-radius: 6px;
+    padding: 2px 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+  }
+
+  /* バージョン履歴 */
+  .ver-history {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-top: 16px;
+  }
+  .ver-entry { padding: 10px 0; border-bottom: 1px dashed var(--border); }
+  .ver-entry:last-child { border-bottom: none; }
+  .ver-entry .ver-tag {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 4px;
+    margin-right: 10px;
+    letter-spacing: 0.5px;
+  }
+  .ver-entry .ver-tag.latest { background: var(--gold); }
+  .ver-entry .ver-body { font-size: 12px; color: var(--text-muted); margin-top: 4px; padding-left: 4px; }
+
+  /* 印刷用 */
+  @media print {
+    .cover { min-height: auto; page-break-after: always; padding: 60px 30px; }
+    .section { page-break-inside: avoid; }
+    .phone-mock { display: none; }
+  }
+
+  /* 横並び2列 */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  .two-col .phone-mock { margin: 0; }
+
+  /* 統計画面モック */
+  .stats-bar-row { margin: 6px 0; }
+  .stats-bar-label { font-size: 10px; margin-bottom: 2px; display: flex; justify-content: space-between; }
+  .stats-bar { height: 14px; border-radius: 7px; overflow: hidden; display: flex; background: #e0e0e0; }
+  .bar-seg { height: 100%; }
+
+  /* フッター */
+  footer {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+    font-size: 11px;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== 表紙 ===================== -->
+<div class="cover">
+  <div class="cover-inner">
+    <div class="cover-badge">USER MANUAL</div>
+    <h1>国試学習アプリ<br><span>使用説明書</span></h1>
+    <p class="cover-sub">はり師きゅう師・あん摩マッサージ指圧師 国家試験対策</p>
+    <div class="cover-version">ver. 2026.5.18</div>
+
+    <div class="cover-features">
+      <div class="cover-feature">
+        <div class="ico">📚</div>
+        <div class="lbl">過去問3,280問＋AI予想1,020問<br>計4,300問を同梱</div>
+      </div>
+      <div class="cover-feature">
+        <div class="ico">🧠</div>
+        <div class="lbl">忘却曲線に基づく<br>効率的な復習スケジュール</div>
+      </div>
+      <div class="cover-feature">
+        <div class="ico">📝</div>
+        <div class="lbl">本試験形式モードで<br>180問/160問の本番対策</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 目次 ===================== -->
+<div class="toc">
+  <h2>📋 もくじ</h2>
+  <ul class="toc-list">
+    <li><span class="num">1</span><a href="#sec1">アプリの基本情報・起動方法</a><span class="dots"></span></li>
+    <li><span class="num">2</span><a href="#sec2">同梱されている問題データ</a><span class="dots"></span></li>
+    <li><span class="num">3</span><a href="#sec3">ホーム画面の見方</a><span class="dots"></span></li>
+    <li><span class="num">4</span><a href="#sec4">各演習モードの使い方</a><span class="dots"></span></li>
+    <li><span class="num">5</span><a href="#sec5">問題演習画面の操作方法</a><span class="dots"></span></li>
+    <li><span class="num">6</span><a href="#sec6">本試験形式モード</a><span class="dots"></span></li>
+    <li><span class="num">7</span><a href="#sec7">AI作成問題の活用方法</a><span class="dots"></span></li>
+    <li><span class="num">8</span><a href="#sec8">統計画面の見方</a><span class="dots"></span></li>
+    <li><span class="num">9</span><a href="#sec9">設定画面</a><span class="dots"></span></li>
+    <li><span class="num">10</span><a href="#sec10">忘却曲線（復習スケジュール）の仕組み</a><span class="dots"></span></li>
+    <li><span class="num">11</span><a href="#sec11">学習データのバックアップ・引継ぎ</a><span class="dots"></span></li>
+    <li><span class="num">12</span><a href="#sec12">バージョン履歴</a><span class="dots"></span></li>
+  </ul>
+</div>
+
+<!-- ===================== 1. 基本情報 ===================== -->
+<div class="section" id="sec1">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <h2>アプリの基本情報・起動方法</h2>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="ico">ℹ️</div>
+    <div class="body">
+      <h4>このアプリについて</h4>
+      <p>はり師きゅう師・あん摩マッサージ指圧師（あマ指）国家試験の過去問を、忘却曲線に基づいて効率的に学習するためのウェブアプリです。インターネット接続不要で、スマートフォン・PCのブラウザで動作します。問題データはアプリに同梱されているため、追加のCSV取り込みは不要です。</p>
+    </div>
+  </div>
+
+  <div class="step-list">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>HTMLファイルをブラウザで開く</h4>
+        <p>「study_app.html」ファイルをスマートフォンまたはPCのブラウザで開きます。Android ChromeまたはPC版のChromeが推奨です。<br>
+        <strong>iPhone・iPadをご利用の場合は</strong>、標準のSafariではローカルHTMLファイルが正常に動作しないことがあるため、無料アプリ「<strong>HTML Viewer Q</strong>」などの利用を推奨します。ただし、これらのビューアでは印刷機能(本試験モードの紙実施でPDF出力)が使用できないことがあります。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>スマートフォンでの利用（おすすめ）</h4>
+        <p>PCからGoogleドライブなどにファイルをアップロードし、スマートフォンでダウンロードして開くと、外出先でも学習できます。学習履歴はスマートフォン本体に自動で保存されます。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>初回起動・自動データ投入</h4>
+        <p>初回起動時、または新しいバージョンを開いた時は、同梱の問題データが自動的にブラウザ内データベースへ投入されます。画面に「問題データを更新中...」「問題データを更新しました（ver.2026.5.18）」と表示されたら使用準備完了です。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>ホーム画面が表示される</h4>
+        <p>同梱データの4,300問がすぐに使える状態でホーム画面が開きます。さっそく演習を始められます。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-warn">
+    <div class="ico">⚠️</div>
+    <div class="body">
+      <h4>学習履歴の保存について</h4>
+      <p>学習履歴はブラウザのIndexedDB（端末内のデータベース）に保存されます。ブラウザのキャッシュやデータを削除すると学習履歴も消えますので、定期的にバックアップを取ることをおすすめします（→11章）。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 2. 同梱問題データ ===================== -->
+<div class="section" id="sec2">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <h2>同梱されている問題データ</h2>
+  </div>
+
+  <p style="margin-bottom: 16px;">ver.2026.5.18では、過去10年分の国家試験問題（第25回〜第34回）と、過去問を分析して作成されたAI予想問題の合計<strong>4,300問</strong>が同梱されています。アプリを起動すれば即座に使えます。</p>
+
+  <table class="bundle-table">
+    <thead>
+      <tr><th>カテゴリ</th><th>試験種別</th><th>収録範囲</th><th class="num">問題数</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>過去問</td><td>はり師きゅう師</td><td>第25回〜第34回</td><td class="num">1,720</td></tr>
+      <tr><td>過去問</td><td>あん摩マッサージ指圧師</td><td>第25回〜第34回</td><td class="num">1,560</td></tr>
+      <tr><td>AI予想問題</td><td>はり師きゅう師</td><td>全34回分析</td><td class="num">180</td></tr>
+      <tr><td>AI予想問題</td><td>はり師きゅう師</td><td>直近10年分析(25〜34回)</td><td class="num">180</td></tr>
+      <tr><td>AI予想問題 🆕</td><td>はり師きゅう師</td><td>第35回予想</td><td class="num">180</td></tr>
+      <tr><td>AI予想問題</td><td>あん摩マッサージ指圧師</td><td>全34回分析</td><td class="num">160</td></tr>
+      <tr><td>AI予想問題</td><td>あん摩マッサージ指圧師</td><td>直近10年分析(25〜34回)</td><td class="num">160</td></tr>
+      <tr><td>AI予想問題 🆕</td><td>あん摩マッサージ指圧師</td><td>第35回予想</td><td class="num">160</td></tr>
+    </tbody>
+    <tfoot>
+      <tr><td colspan="3">合計</td><td class="num">4,300</td></tr>
+    </tfoot>
+  </table>
+
+  <div class="callout callout-tip">
+    <div class="ico">💡</div>
+    <div class="body">
+      <h4>収録科目の内訳</h4>
+      <p>AM（基礎科目）：医療概論・衛生学/公衆衛生学・関係法規・解剖学・生理学・病理学概論・臨床医学総論・臨床医学各論・リハビリテーション医学・総合問題（基礎科目）<br>
+      PM（専門科目）：東洋医学概論・経絡経穴概論・東洋医学臨床論・総合問題（専門科目）・はり理論・きゅう理論・あん摩マッサージ指圧理論<br>
+      その他：不適切問題（後日不適切とされ全選択肢正解となった問題）</p>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="ico">📝</div>
+    <div class="body">
+      <h4>複数正解の問題について</h4>
+      <p>一部の問題（21問）は正解が複数あります。これらは選択肢を複数選んで解答する仕様で、すべての正解選択肢を選んだ場合のみ正答となります。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 3. ホーム画面 ===================== -->
+<div class="section" id="sec3">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <h2>ホーム画面の見方</h2>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <p style="margin-bottom: 16px;">ホーム画面では学習の進捗が一目でわかり、各演習モードにアクセスできます。</p>
+
+      <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">📊 統計表示（上部の4つのボックス）</h4>
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="val">4300</div>
+            <div class="lbl">総問題数</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">452</div>
+            <div class="lbl">解答済み</div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-box orange">
+            <div class="val">12</div>
+            <div class="lbl">復習対象</div>
+          </div>
+          <div class="stat-box red">
+            <div class="val">28</div>
+            <div class="lbl">間違い直し</div>
+          </div>
+        </div>
+        <ul style="font-size: 11px; color: var(--text-muted); padding-left: 16px; line-height: 2;">
+          <li><strong>復習対象（オレンジ）</strong>：今日の復習スケジュールが来た問題数</li>
+          <li><strong>間違い直し（赤）</strong>：直近で間違えた・スキップした問題数</li>
+        </ul>
+      </div>
+
+      <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">🎯 演習モードメニュー（4種類）</h4>
+        <div class="menu-btn-mock">
+          <div class="ico">📅</div>
+          <div class="info">
+            <div class="name">今日の演習</div>
+            <div class="desc">全科目から分散して未出題優先で出題</div>
+          </div>
+        </div>
+        <div class="menu-btn-mock">
+          <div class="ico">🔄</div>
+          <div class="info">
+            <div class="name">復習モード</div>
+            <div class="desc">忘却曲線に基づき出題</div>
+          </div>
+        </div>
+        <div class="menu-btn-mock">
+          <div class="ico">📚</div>
+          <div class="info">
+            <div class="name">科目別演習</div>
+            <div class="desc">科目を選んで集中学習</div>
+          </div>
+        </div>
+        <div class="menu-btn-mock exam-btn">
+          <div class="ico">📝</div>
+          <div class="info">
+            <div class="name">本試験形式モード</div>
+            <div class="desc">本番同様180問/160問で実施</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">📌 紙試験の結果入力待ち</h4>
+        <p style="font-size: 12px; color: var(--text-muted); line-height: 1.7; margin-bottom: 12px;">本試験形式モードで「紙で実施」を選んだ場合、ここに未採点のセッションが表示されます。タップすると○×入力画面が開きます。</p>
+        <div style="background: #fff8e1; border: 1px solid #ffa726; border-radius: 8px; padding: 10px 12px; font-size: 11px;">
+          <div style="font-weight: 700; color: #e65100;">📝 はりきゅう 第34回</div>
+          <div style="color: #5d4037; margin-top: 2px;">作成日: 2026/05/12 / 180問</div>
+          <div style="color: #5d4037; margin-top: 2px;">入力中: 45/180問</div>
+        </div>
+
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--primary); margin: 16px 0 8px;">🔽 下部ナビゲーション</h4>
+        <div style="display: flex; background: white; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; font-size: 10px; text-align: center;">
+          <div style="flex: 1; padding: 10px 4px; border-right: 1px solid var(--border);">🏠<br>ホーム</div>
+          <div style="flex: 1; padding: 10px 4px; border-right: 1px solid var(--border); background: var(--primary-light); color: var(--primary); font-weight: 700;">📊<br>統計</div>
+          <div style="flex: 1; padding: 10px 4px;">⚙️<br>設定</div>
+        </div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">画面下部のナビゲーションから「ホーム」「統計」「設定」に素早くアクセスできます。</p>
+      </div>
+
+      <div class="callout callout-info" style="margin-top: 16px;">
+        <div class="ico">🔍</div>
+        <div class="body">
+          <h4>試験種別フィルター</h4>
+          <p>設定で「はりきゅう」「あマ指」のどちらかに絞ることができます。フィルター中は統計数値もその種別のみが表示されます。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 4. 演習モード ===================== -->
+<div class="section" id="sec4">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <h2>各演習モードの使い方</h2>
+  </div>
+
+  <div class="mode-grid">
+    <div class="mode-card">
+      <div class="mode-icon">📅</div>
+      <h3>今日の演習</h3>
+      <p>全科目（不適切問題を含む）から問題を可能な限り均等に分散して出題。未出題を優先し、不足分は復習日が近い問題で補充します。日々のメイン学習に最適です。</p>
+      <span class="tag tag-beginner">📖 メイン学習</span>
+    </div>
+
+    <div class="mode-card">
+      <div class="mode-icon">🔄</div>
+      <h3>復習モード</h3>
+      <p>忘却曲線に基づいて、今日復習すべき問題だけを自動的に出題します。毎日コツコツ取り組むことで効率よく記憶を定着させられます。</p>
+      <span class="tag tag-review">🔥 毎日おすすめ</span>
+    </div>
+
+    <div class="mode-card">
+      <div class="mode-icon">📚</div>
+      <h3>科目別演習</h3>
+      <p>AM（基礎科目）・PM（専門科目）ごとに科目一覧が表示されます。科目をタップするとその科目の問題が、未出題優先・復習日が近い順で出題されます。</p>
+      <span class="tag tag-beginner">🎯 科目集中</span>
+    </div>
+
+    <div class="mode-card">
+      <div class="mode-icon">📝</div>
+      <h3>本試験形式モード</h3>
+      <p>本番と同じ科目構成で180問（はりきゅう）または160問（あマ指）を出題。画面または紙で実施でき、合格判定・科目別正答率も表示されます。AI作成問題セットを選ぶこともできます。</p>
+      <span class="tag tag-exam">🏆 本番対策</span>
+    </div>
+  </div>
+
+  <h3 style="margin: 36px 0 16px; font-size: 16px; color: var(--primary);">📅 今日の演習の操作方法</h3>
+
+  <div class="step-list">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>出題する問題数を選ぶ</h4>
+        <p>「10問」「20問」「30問」「40問」「50問」から選択します（デフォルト：20問）。これは選んだ科目ごとの数ではなく、その日に解く<strong>合計問題数</strong>です。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>「演習を開始」をタップ</h4>
+        <p>科目を個別に選ぶ操作はありません。全科目から自動的に分散して出題されます。出題対象は設定の「試験種別フィルター」に従います（はりきゅう・あマ指・両方）。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>順番に解答していく</h4>
+        <p>科目を横断しながら順番に出題されます。解答結果は自動的に学習履歴・忘却曲線に反映されます。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="logic-flow">
+    <h4 style="font-size: 14px; color: var(--primary); margin-bottom: 12px; font-weight: 700;">⚙️ 出題ロジック（今日の演習）</h4>
+
+    <div class="logic-step">
+      <div class="num-badge">1</div>
+      <div class="desc-body">
+        <h5>科目ごとに問題プールを準備</h5>
+        <p>全科目について、未出題の問題をランダム順に並べ、その後ろに出題済みの問題を「復習日が近い順」で並べたリストを作ります。</p>
+      </div>
+    </div>
+    <div class="logic-step">
+      <div class="num-badge">2</div>
+      <div class="desc-body">
+        <h5>科目を横断してラウンドロビン方式で抽出</h5>
+        <p>本試験出題順（医療概論→衛生→…→不適切問題）に科目を巡回し、各科目から1問ずつ取り出します。設定した問題数に達するまでこれを繰り返します。</p>
+      </div>
+    </div>
+    <div class="logic-step">
+      <div class="num-badge">3</div>
+      <div class="desc-body">
+        <h5>結果として偏りなく分散</h5>
+        <p>20問選んだ場合、科目数が10あれば「各科目2問ずつ」のように自然に均等配分されます。ある科目に未出題が多ければそちらから優先的に消化していくため、学習の進度に応じた最適な出題になります。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="ico">📌</div>
+    <div class="body">
+      <h4>AI作成問題は対象外</h4>
+      <p>今日の演習・科目別演習では、AI作成問題1,020問は出題されません。AI作成問題は「本試験形式モード」専用です（→7章）。</p>
+    </div>
+  </div>
+
+  <h3 style="margin: 28px 0 16px; font-size: 16px; color: var(--primary);">📚 科目別演習の操作方法</h3>
+
+  <div class="step-list">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>科目一覧から1つ選択</h4>
+        <p>AM（基礎科目）・PM（専門科目）に分けて表示されます。学びたい科目をタップしてください。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>未出題優先で順に出題される</h4>
+        <p>未出題の問題から先に出題し、すべて解き終わると、出題済みの問題を「復習日が近い順」で続けて出題します。1科目を集中して仕上げたい時に有効です。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 5. 問題演習画面 ===================== -->
+<div class="section" id="sec5">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <h2>問題演習画面の操作方法</h2>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="phone-mock">
+        <div class="phone">
+          <div class="phone-header">
+            <span>📖 問題演習</span>
+            <span style="margin-left: auto; font-size: 11px; opacity: 0.8;">12/20</span>
+          </div>
+          <div class="phone-body">
+            <div style="display: flex; gap: 6px; margin-bottom: 10px; font-size: 9px;">
+              <span style="background: #5a4000; color: #ffd54f; padding: 2px 6px; border-radius: 4px; font-weight: 700;">はりきゅう</span>
+              <span style="background: var(--primary-light); color: var(--primary); padding: 2px 6px; border-radius: 4px;">解剖学</span>
+              <span style="background: var(--primary-light); color: var(--primary); padding: 2px 6px; border-radius: 4px;">第34回 問15</span>
+            </div>
+            <div style="font-size: 12px; font-weight: 500; margin-bottom: 10px; line-height: 1.6;">橈骨神経が通るのはどれか。</div>
+            <div class="choice selected">1. 筋裂孔</div>
+            <div class="choice">2. 鎖骨下筋下隙</div>
+            <div class="choice">3. 橈骨神経溝</div>
+            <div class="choice">4. 腕橈骨筋と回外筋の間</div>
+            <div style="display: flex; gap: 6px; margin-top: 10px;">
+              <button style="flex: 0 0 auto; padding: 8px 10px; background: white; border: 1px solid var(--border); border-radius: 8px; font-size: 11px; cursor: pointer;">分からない</button>
+              <button style="flex: 1; padding: 8px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 11px; cursor: pointer;">解答する</button>
+            </div>
+            <div style="margin-top: 10px; background: #fffbf0; border-radius: 8px; padding: 8px;">
+              <div style="font-size: 10px; color: #8b6914; font-weight: 700; margin-bottom: 4px;">✏️ メモ</div>
+              <div style="font-size: 10px; color: #aaa;">自分用のメモを書く...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h4 style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">画面の見方</h4>
+      <ul style="font-size: 12px; line-height: 2; color: var(--text-muted); padding-left: 16px;">
+        <li><strong>上部バッジ</strong>：試験種別（はりきゅう/あマ指）・科目・出典（第◯◯回 問◯◯）</li>
+        <li><strong>進捗</strong>：右上の「12/20」で現在の出題番号を確認</li>
+        <li><strong>選択肢1〜4</strong>：タップして回答を選択（設定でランダム化可）</li>
+        <li><strong>解答するボタン</strong>：選択後にタップして採点</li>
+        <li><strong>分からないボタン</strong>：スキップ（間違い直し対象になる）</li>
+        <li><strong>メモ欄</strong>：問題ごとに自由なメモを保存できる</li>
+      </ul>
+
+      <h4 style="font-size: 14px; font-weight: 700; color: var(--primary); margin: 16px 0 12px;">解答後の画面</h4>
+
+      <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 8px 12px; border-radius: 4px; margin-bottom: 8px; font-size: 12px;">
+        <strong>✓ 正解！</strong>
+      </div>
+      <div style="background: #ffebee; border-left: 4px solid #f44336; padding: 8px 12px; border-radius: 4px; margin-bottom: 12px; font-size: 12px;">
+        <strong>× 不正解</strong>
+      </div>
+
+      <ul style="font-size: 12px; line-height: 2; color: var(--text-muted); padding-left: 16px; margin-bottom: 16px;">
+        <li>正解の選択肢が<span style="color: var(--green); font-weight: 700;">緑</span>でハイライト</li>
+        <li>解説が表示される（同梱問題には解説が付いています）</li>
+        <li>「次の問題 →」で次へ進む</li>
+      </ul>
+
+      <div class="callout callout-tip">
+        <div class="ico">💡</div>
+        <div class="body">
+          <h4>メモの活用</h4>
+          <p>解説を読んで気づいたポイントや補足情報をメモ欄に記録しておくと、次回復習時に確認できます。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-warn">
+    <div class="ico">⚠️</div>
+    <div class="body">
+      <h4>解説の正確性について</h4>
+      <p>同梱の解説はAIによって自動生成されたものを含みます。学習の参考として活用し、不明点や違和感のある内容は教科書・授業ノート等で必ずご確認ください。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 6. 本試験形式モード ===================== -->
+<div class="section" id="sec6">
+  <div class="section-header">
+    <div class="section-num">6</div>
+    <h2>本試験形式モード</h2>
+  </div>
+
+  <p style="margin-bottom: 20px;">本番の国家試験と同じ科目構成・問題数で実施できるモードです。「画面で実施」と「紙で実施（PDF出力）」の2通りから選べます。</p>
+
+  <h3 style="font-size: 15px; color: var(--primary); margin-bottom: 16px;">📋 セットアップ画面の設定項目</h3>
+
+  <div style="background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
+    <div style="background: var(--primary-light); padding: 12px 16px; font-size: 12px; font-weight: 700; color: var(--primary);">① 試験種別</div>
+    <div style="padding: 12px 16px; font-size: 12px; color: var(--text-muted);">「はり師きゅう師（180問）」または「あん摩マッサージ指圧師（160問）」を選択します。</div>
+    <div style="background: var(--primary-light); padding: 12px 16px; font-size: 12px; font-weight: 700; color: var(--primary);">② 出題方法</div>
+    <div style="padding: 12px 16px; font-size: 12px; color: var(--text-muted);">
+      <strong>ランダム出題（デフォルト）：</strong>取り込み済みの全年度から科目別に問題を抽出<br>
+      <strong>年度を選んで出題：</strong>特定の回（第25〜34回）を科目別に出題<br>
+      <strong>AI作成問題セット：</strong>「全34回分析」「直近10年分析」のセットから出題（→7章）
+    </div>
+    <div style="background: var(--primary-light); padding: 12px 16px; font-size: 12px; font-weight: 700; color: var(--primary);">③ 実施方法</div>
+    <div style="padding: 12px 16px; font-size: 12px; color: var(--text-muted);">
+      <strong>画面で実施：</strong>スマートフォン・PCで解答。AM・PM各2時間10分タイマー付き<br>
+      <strong>紙で実施（PDF）：</strong>A4印刷用のPDFを生成。後でアプリに採点入力できる
+    </div>
+    <div style="background: var(--primary-light); padding: 12px 16px; font-size: 12px; font-weight: 700; color: var(--primary);">④ オプション</div>
+    <div style="padding: 12px 16px; font-size: 12px; color: var(--text-muted);">
+      <strong>学習履歴に反映：</strong>画面実施時に自動で復習スケジュールに計上（紙の場合は採点入力後に反映）<br>
+      <strong>選択肢のランダム化：</strong>選択肢の並び順をランダムにする（画面・PDFともに適用）
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h3 style="font-size: 15px; color: var(--primary); margin-bottom: 16px;">🖥️ 画面で実施</h3>
+      <div class="step-list">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>AM（午前）から開始</h4>
+            <p>タイマーが自動的にカウントダウン開始（2時間10分）。画面右上の時間を確認しながら解答します。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>「後で見直す」機能</h4>
+            <p>自信のない問題には「後で見直す」フラグを付けられます。問題一覧グリッドでフラグ付きの問題に素早くジャンプできます。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>PM（午後）へ移行</h4>
+            <p>AM終了後、PMへ移行して続けて解答します。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h4>結果画面</h4>
+            <p>得点・正答率・合格判定（60%ライン）・科目別正答率が表示されます。間違えた問題の復習も可能です。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 style="font-size: 15px; color: var(--primary); margin-bottom: 16px;">📄 紙で実施（PDF）</h3>
+      <div class="step-list">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>PDF出力</h4>
+            <p>「本試験を開始」をタップすると新しいタブでPDFプレビューが開きます。「🖨️ 印刷/PDF保存」ボタンで保存・印刷してください。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>紙で解答する</h4>
+            <p>印刷した問題用紙に解答を記入します。PDF最終ページに正答一覧が付いています（問題用紙とは別に印刷・配布可）。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>ホーム画面で結果入力</h4>
+            <p>ホーム画面上部に「📝 紙試験 結果入力待ち」が表示されるのでタップします。各問題の○×をタップで入力します。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h4>採点・履歴反映</h4>
+            <p>「採点して結果を見る」をタップすると自動採点されます。「学習履歴に反映」がONなら忘却曲線に計上されます。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-info" style="margin-top: 24px;">
+    <div class="ico">📊</div>
+    <div class="body">
+      <h4>科目構成について（自動で均等抽出）</h4>
+      <p>はりきゅう：AM 90問（医療概論4・衛生6・関係法規4・解剖9・生理9・病理6・臨床総論10・臨床各論22・リハ12・基礎総合8）+ PM 90問（東洋概論16・経絡経穴20・東洋臨床24・専門総合10・はり理論10・きゅう理論10）<br>
+      あマ指：AM 80問 + PM 80問（東洋概論14・経絡経穴14・東洋臨床30・専門総合10・あマ指理論12）</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 7. AI作成問題 ===================== -->
+<div class="section" id="sec7">
+  <div class="section-header">
+    <div class="section-num">7</div>
+    <h2>AI作成問題の活用方法</h2>
+  </div>
+
+  <div class="callout callout-new">
+    <div class="ico">🤖</div>
+    <div class="body">
+      <h4>AI作成問題とは</h4>
+      <p>過去34回分の国家試験を分析し、出題傾向や頻出テーマに基づいてAIが新たに作成した予想問題です。本番にはない問題で実力を試すことができ、過去問だけでは見つからない弱点の発見に役立ちます。</p>
+    </div>
+  </div>
+
+  <h3 style="font-size: 15px; color: var(--primary); margin: 24px 0 16px;">📦 同梱されているAI作成問題セット</h3>
+
+  <table class="bundle-table">
+    <thead>
+      <tr><th>セット名</th><th>試験種別</th><th>分析範囲</th><th class="num">問題数</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>はりきゅう 全34回分析</td><td>はり師きゅう師</td><td>第1回〜第34回</td><td class="num">180</td></tr>
+      <tr><td>はりきゅう 直近10年分析</td><td>はり師きゅう師</td><td>第25回〜第34回</td><td class="num">180</td></tr>
+      <tr><td>はりきゅう 第35回予想 🆕</td><td>はり師きゅう師</td><td>次回試験予想</td><td class="num">180</td></tr>
+      <tr><td>あマ指 全34回分析</td><td>あん摩マッサージ指圧師</td><td>第1回〜第34回</td><td class="num">160</td></tr>
+      <tr><td>あマ指 直近10年分析</td><td>あん摩マッサージ指圧師</td><td>第25回〜第34回</td><td class="num">160</td></tr>
+      <tr><td>あマ指 第35回予想 🆕</td><td>あん摩マッサージ指圧師</td><td>次回試験予想</td><td class="num">160</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size: 15px; color: var(--primary); margin: 24px 0 16px;">🎯 使い方</h3>
+
+  <div class="step-list">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>本試験形式モードを開く</h4>
+        <p>ホーム画面で「📝 本試験形式モード」をタップします。AI作成問題は本試験形式モード専用となっています。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>出題方法で「AI作成問題セット」を選ぶ</h4>
+        <p>「出題方法」の選択肢で、AI作成問題のセット(「全34回分析」「直近10年分析」「第35回予想」のいずれか)を選択します。180問または160問が連続して出題されます。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>画面または紙で実施</h4>
+        <p>過去問同様、画面・紙どちらでも実施できます。結果は科目別正答率付きで表示され、苦手分野の可視化に役立ちます。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-warn">
+    <div class="ico">⚠️</div>
+    <div class="body">
+      <h4>AI作成問題は補助教材として</h4>
+      <p>AI作成問題は出題傾向の分析に基づきますが、本試験の問題そのものではありません。実際の試験ではより多様な切り口で出題されますので、過去問演習をベースに、AI作成問題は実力チェックや弱点発見の補助としてご活用ください。</p>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="ico">📌</div>
+    <div class="body">
+      <h4>復習スケジュール（忘却曲線）の対象外</h4>
+      <p>AI作成問題は本試験形式モード専用のため、今日の演習・科目別演習・復習モードでは出題されません。何度でも力試しに使えるよう、忘却曲線・復習スケジュールの対象外としています。本番形式の力試しとして繰り返しチャレンジしてみてください。</p>
+    </div>
+  </div>
+
+  <div class="callout callout-warn">
+    <div class="ico">🚫</div>
+    <div class="body">
+      <h4>学習履歴には一切反映されません</h4>
+      <p>AI作成問題セットを選んで本試験形式モードを実施した場合、「学習履歴に反映」のチェックの有無に関わらず、解答結果は学習履歴・忘却曲線に反映されません。本試験結果画面の「間違いを復習」ボタンから解き直し画面に進んだ場合も同様で、ここでの正解／不正解は記録されません。AI作成問題はあくまで本番形式の力試し用としてお使いください。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 8. 統計画面 ===================== -->
+<div class="section" id="sec8">
+  <div class="section-header">
+    <div class="section-num">8</div>
+    <h2>統計画面の見方</h2>
+  </div>
+
+  <p style="margin-bottom: 24px;">統計画面では学習の全体像と進捗状況を詳しく確認できます。下部ナビゲーションの「📊 統計」からアクセスします。</p>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+      <h4 style="font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">① 全体サマリー（6指標）</h4>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div style="background: var(--primary-light); border-radius: 8px; padding: 8px; text-align: center; font-size: 10px;">
+          <div style="font-size: 18px; font-weight: 700; color: var(--primary);">4300</div>取り込み済
+        </div>
+        <div style="background: var(--primary-light); border-radius: 8px; padding: 8px; text-align: center; font-size: 10px;">
+          <div style="font-size: 18px; font-weight: 700; color: var(--primary);">452</div>解答経験
+        </div>
+        <div style="background: var(--primary-light); border-radius: 8px; padding: 8px; text-align: center; font-size: 10px;">
+          <div style="font-size: 18px; font-weight: 700; color: var(--green);">78%</div>正答率
+        </div>
+        <div style="background: var(--primary-light); border-radius: 8px; padding: 8px; text-align: center; font-size: 10px;">
+          <div style="font-size: 18px; font-weight: 700; color: var(--accent);">201</div>習得済(Lv4+)
+        </div>
+        <div style="background: var(--primary-light); border-radius: 8px; padding: 8px; text-align: center; font-size: 10px;">
+          <div style="font-size: 18px; font-weight: 700; color: var(--orange);">12</div>今日の復習
+        </div>
+        <div style="background: var(--primary-light); border-radius: 8px; padding: 8px; text-align: center; font-size: 10px;">
+          <div style="font-size: 18px; font-weight: 700; color: var(--text-muted);">2828</div>未挑戦
+        </div>
+      </div>
+    </div>
+
+    <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+      <h4 style="font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">② 直近7日の学習グラフ</h4>
+      <div style="display: flex; align-items: flex-end; gap: 6px; height: 60px; margin-bottom: 6px;">
+        <div style="flex: 1; background: var(--accent); height: 30%; border-radius: 3px 3px 0 0;"></div>
+        <div style="flex: 1; background: var(--accent); height: 70%; border-radius: 3px 3px 0 0;"></div>
+        <div style="flex: 1; background: var(--accent); height: 50%; border-radius: 3px 3px 0 0;"></div>
+        <div style="flex: 1; background: var(--accent); height: 90%; border-radius: 3px 3px 0 0;"></div>
+        <div style="flex: 1; background: var(--accent); height: 40%; border-radius: 3px 3px 0 0;"></div>
+        <div style="flex: 1; background: var(--accent); height: 80%; border-radius: 3px 3px 0 0;"></div>
+        <div style="flex: 1; background: var(--primary); height: 60%; border-radius: 3px 3px 0 0;"></div>
+      </div>
+      <div style="display: flex; gap: 6px; font-size: 9px; color: var(--text-muted);">
+        <div style="flex: 1; text-align: center;">月</div>
+        <div style="flex: 1; text-align: center;">火</div>
+        <div style="flex: 1; text-align: center;">水</div>
+        <div style="flex: 1; text-align: center;">木</div>
+        <div style="flex: 1; text-align: center;">金</div>
+        <div style="flex: 1; text-align: center;">土</div>
+        <div style="flex: 1; text-align: center;">今日</div>
+      </div>
+      <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">1日に解答した問題数の推移。継続性の確認に活用してください。</p>
+    </div>
+
+    <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+      <h4 style="font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">③ 復習の進度（レベル別）</h4>
+      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">忘却曲線のレベルごとに問題数を表示します。</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px; font-size: 10px; margin-bottom: 8px;">
+        <span style="background: #e0e0e0; padding: 2px 6px; border-radius: 4px;">Lv0 未学習</span>
+        <span style="background: #f44336; color: white; padding: 2px 6px; border-radius: 4px;">Lv1</span>
+        <span style="background: #ffc107; color: white; padding: 2px 6px; border-radius: 4px;">Lv2</span>
+        <span style="background: #8bc34a; color: white; padding: 2px 6px; border-radius: 4px;">Lv3</span>
+        <span style="background: #4caf50; color: white; padding: 2px 6px; border-radius: 4px;">Lv4</span>
+        <span style="background: #2196f3; color: white; padding: 2px 6px; border-radius: 4px;">Lv5</span>
+      </div>
+      <p style="font-size: 11px; color: var(--text-muted);">Lv4以上が「習得済み」の目安。青(Lv5)が増えると記憶が定着してきた証拠です。</p>
+    </div>
+
+    <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+      <h4 style="font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">④ 科目別・年度別 学習進度</h4>
+      <div class="stats-bar-row">
+        <div class="stats-bar-label"><span>解剖学</span><span style="font-size: 10px; color: var(--text-muted);">進度 42% / 全92問</span></div>
+        <div class="stats-bar">
+          <div class="bar-seg" style="width: 30%; background: #e0e0e0;"></div>
+          <div class="bar-seg" style="width: 15%; background: #f44336;"></div>
+          <div class="bar-seg" style="width: 10%; background: #ffc107;"></div>
+          <div class="bar-seg" style="width: 25%; background: #8bc34a;"></div>
+          <div class="bar-seg" style="width: 20%; background: #4caf50;"></div>
+        </div>
+      </div>
+      <div class="stats-bar-row" style="margin-top: 8px;">
+        <div class="stats-bar-label"><span>東洋医学概論</span><span style="font-size: 10px; color: var(--text-muted);">進度 65% / 全129問</span></div>
+        <div class="stats-bar">
+          <div class="bar-seg" style="width: 10%; background: #e0e0e0;"></div>
+          <div class="bar-seg" style="width: 5%; background: #f44336;"></div>
+          <div class="bar-seg" style="width: 20%; background: #8bc34a;"></div>
+          <div class="bar-seg" style="width: 35%; background: #4caf50;"></div>
+          <div class="bar-seg" style="width: 30%; background: #2196f3;"></div>
+        </div>
+      </div>
+      <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">積み上げバーの色が右側(Lv4以上の緑〜青)に偏るほど、その科目の習得が進んでいることを示します。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 9. 設定画面 ===================== -->
+<div class="section" id="sec9">
+  <div class="section-header">
+    <div class="section-num">9</div>
+    <h2>設定画面</h2>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div style="background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
+        <div style="background: var(--primary); color: white; padding: 10px 16px; font-size: 12px; font-weight: 700;">🎯 出題設定</div>
+        <div class="setting-row">
+          <div>
+            <div class="lbl">選択肢をランダムに並べる</div>
+            <div class="desc">演習モード全般に適用</div>
+          </div>
+          <div class="toggle"></div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="lbl">試験種別フィルター</div>
+            <div class="desc">はりきゅう / あマ指 / 両方</div>
+          </div>
+          <span style="font-size: 11px; color: var(--accent);">はりきゅう ›</span>
+        </div>
+      </div>
+
+      <div style="background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
+        <div style="background: var(--primary); color: white; padding: 10px 16px; font-size: 12px; font-weight: 700;">ℹ️ 制作者情報</div>
+        <div style="padding: 12px 16px; font-size: 12px; color: var(--text-muted); line-height: 1.8;">
+          <div>はり師きゅう師・あマ指の国家試験対策学習アプリ</div>
+          <div style="margin-top: 4px;">バージョン: ver.2026.5.18</div>
+          <div style="margin-top: 4px;">制作者：75期生　藤本</div>
+          <div>大阪行岡医療専門学校長柄校　鍼灸科</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
+        <div style="background: var(--primary); color: white; padding: 10px 16px; font-size: 12px; font-weight: 700;">💾 学習履歴バックアップ</div>
+        <div class="setting-row" style="cursor: pointer;">
+          <div class="lbl">学習履歴をエクスポート</div>
+          <span style="color: var(--accent);">›</span>
+        </div>
+        <div class="setting-row" style="cursor: pointer;">
+          <div class="lbl">学習履歴をインポート</div>
+          <span style="color: var(--accent);">›</span>
+        </div>
+        <div class="setting-row" style="cursor: pointer;">
+          <div class="lbl" style="color: var(--red);">学習履歴をリセット</div>
+          <span style="color: var(--red);">›</span>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="ico">⚠️</div>
+        <div class="body">
+          <h4>機種変更・引き継ぎの手順</h4>
+          <p>① 旧端末で「学習履歴をエクスポート」→JSONファイルを保存<br>② 新端末で最新版「study_app.html」を開く（4,300問の同梱データが自動投入される）<br>③ 新端末で「学習履歴をインポート」でJSONを読み込む</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 10. 忘却曲線 ===================== -->
+<div class="section" id="sec10">
+  <div class="section-header">
+    <div class="section-num">10</div>
+    <h2>忘却曲線（復習スケジュール）の仕組み</h2>
+  </div>
+
+  <p style="margin-bottom: 20px;">このアプリはエビングハウスの忘却曲線の考え方に基づき、正解した問題は間隔を広げながら繰り返し出題します。忘れかけた頃に復習することで、長期記憶への定着を助けます。</p>
+
+  <table class="curve-table">
+    <tr>
+      <th>レベル</th>
+      <th>状態</th>
+      <th>次の復習まで</th>
+      <th>色</th>
+    </tr>
+    <tr>
+      <td><span class="lv-badge" style="background:#e0e0e0; color:#333;">Lv 0</span></td>
+      <td>未学習 / 不正解・スキップでリセット</td>
+      <td>—(未学習) / 当日中(不正解時)</td>
+      <td>グレー</td>
+    </tr>
+    <tr>
+      <td><span class="lv-badge" style="background:#f44336;">Lv 1</span></td>
+      <td>1回目正解</td>
+      <td>2日後に復習</td>
+      <td>赤</td>
+    </tr>
+    <tr>
+      <td><span class="lv-badge" style="background:#ffc107;">Lv 2</span></td>
+      <td>2回目正解</td>
+      <td>3日後に復習</td>
+      <td>黄</td>
+    </tr>
+    <tr>
+      <td><span class="lv-badge" style="background:#8bc34a;">Lv 3</span></td>
+      <td>3回目正解</td>
+      <td>7日後に復習</td>
+      <td>黄緑</td>
+    </tr>
+    <tr>
+      <td><span class="lv-badge" style="background:#4caf50;">Lv 4</span></td>
+      <td>4回目正解(習得済み)</td>
+      <td>14日後に復習</td>
+      <td>緑</td>
+    </tr>
+    <tr>
+      <td><span class="lv-badge" style="background:#2196f3;">Lv 5</span></td>
+      <td>5回目以上正解(最高レベル)</td>
+      <td>30日後に復習</td>
+      <td>青</td>
+    </tr>
+  </table>
+
+  <div class="callout callout-warn">
+    <div class="ico">🔄</div>
+    <div class="body">
+      <h4>不正解・スキップ時のリセット</h4>
+      <p>不正解またはスキップ(分からない)にした場合は、レベルがLv0に戻り、その日のうちに復習対象として再出題されます。復習モードや今日の演習を毎日こなすことで着実にレベルアップできます。</p>
+    </div>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="ico">💡</div>
+    <div class="body">
+      <h4>効果的な学習の進め方</h4>
+      <p>
+        <strong>① 毎日：</strong>「復習モード」で当日の復習問題をこなす（5〜15分）<br>
+        <strong>② メイン学習：</strong>「今日の演習」で20〜30問を全科目から分散学習<br>
+        <strong>③ 週1回：</strong>統計画面で進捗を確認し、弱い科目を「科目別演習」で強化<br>
+        <strong>④ 月1回：</strong>「本試験形式モード（過去問）」で本番形式に慣れる<br>
+        <strong>⑤ 試験直前：</strong>「本試験形式モード（AI作成問題）」で総仕上げ
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 11. バックアップ ===================== -->
+<div class="section" id="sec11">
+  <div class="section-header">
+    <div class="section-num">11</div>
+    <h2>学習データのバックアップ・引継ぎ</h2>
+  </div>
+
+  <div class="callout callout-warn" style="margin-bottom: 24px;">
+    <div class="ico">⚠️</div>
+    <div class="body">
+      <h4>重要：定期的にバックアップを取ってください</h4>
+      <p>学習履歴はブラウザ内部に保存されています。ブラウザのデータ消去・アプリの削除・OSアップデートなどで消える場合があります。月1回程度のバックアップをおすすめします。</p>
+    </div>
+  </div>
+
+  <h3 style="font-size: 15px; color: var(--primary); margin-bottom: 16px;">📤 バックアップ（エクスポート）</h3>
+  <div class="step-list" style="margin-bottom: 28px;">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>設定画面を開く</h4>
+        <p>下部ナビゲーションの「⚙️ 設定」をタップします。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>「学習履歴をエクスポート」をタップ</h4>
+        <p>「study_progress_バックアップ日.json」というファイルが自動的にダウンロードされます。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>安全な場所に保存</h4>
+        <p>Googleドライブ・iCloud・PCのローカルフォルダなどに保存してください。</p>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="font-size: 15px; color: var(--primary); margin-bottom: 16px;">📥 復元（インポート）</h3>
+  <div class="step-list" style="margin-bottom: 28px;">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>新しい端末・ブラウザでアプリを開く</h4>
+        <p>最新版「study_app.html」を新端末で開きます。同梱問題4,300問が自動投入されるので、追加データの取り込みは不要です。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>「学習履歴をインポート」をタップ</h4>
+        <p>設定画面の「学習履歴をインポート」をタップし、保存しておいたJSONファイルを選択します。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>確認・完了</h4>
+        <p>「〇〇件の学習履歴を復元しました」というメッセージが出れば成功です。レベル・復習スケジュール・メモすべて引き継がれます。</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+    <h3 style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">❓ よくある質問</h3>
+    <div style="font-size: 12px; line-height: 2; color: var(--text-muted);">
+      <p><strong>Q. 「今日の演習」で50問を選んでも科目分散される？</strong><br>
+      A. はい。出題対象の科目が15あれば、ラウンドロビン方式で「各科目3〜4問ずつ」のように自動的に分散します。各科目では未出題が優先的に消化されます。</p>
+      <p style="margin-top: 12px;"><strong>Q. 「科目別演習」と「今日の演習で1科目だけにしぼる」の違いは？</strong><br>
+      A. 現バージョンでは「今日の演習」は全科目自動分散の固定仕様です。1科目に絞って集中したい時は「科目別演習」をお使いください。どちらも未出題が優先されます。</p>
+      <p style="margin-top: 12px;"><strong>Q. 新しいバージョンのHTMLファイルを開くとどうなる？</strong><br>
+      A. アプリは内部にバージョン番号（ver.2026.5.18など）を持っており、保存済みより新しい場合のみ同梱問題データを自動で再投入します。学習履歴・メモは保持されます。</p>
+      <p style="margin-top: 12px;"><strong>Q. 「不適切問題」科目とは？</strong><br>
+      A. 国家試験で出題後に不適切問題とされ、全選択肢が正解扱いとなった問題です。学習の参考として含まれています。今日の演習でも出題対象に含まれます。</p>
+      <p style="margin-top: 12px;"><strong>Q. 試験種別フィルターはいつ使う？</strong><br>
+      A. はりきゅうのみ・あマ指のみを受験する方は、設定でフィルターをかけると統計・今日の演習が受験予定の試験に絞られて便利です。</p>
+      <p style="margin-top: 12px;"><strong>Q. AI作成問題は復習に出てこないのはなぜ？</strong><br>
+      A. AI作成問題は本試験形式モード専用の設計です。何度でも力試しに使えるよう、忘却曲線・復習スケジュールの対象外としています。「学習履歴に反映」のチェックの有無に関わらず、結果は記録されません。</p>
+      <p style="margin-top: 12px;"><strong>Q. 「第35回予想」と「全34回分析・直近10年分析」の違いは？</strong><br>
+      A. 「全34回分析」「直近10年分析」は過去全体の傾向から作成された問題です。「第35回予想」は次回の試験を見据えた最新の予想問題セットで、より直近の出題傾向や時事的なテーマを反映しています。</p>
+      <p style="margin-top: 12px;"><strong>Q. 起動時に「このアプリは改変されています」と表示される</strong><br>
+      A. 特定のHTMLを編集した場合に発生します。元のファイルを再ダウンロードして開き直してください。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 12. バージョン履歴 ===================== -->
+<div class="section" id="sec12">
+  <div class="section-header">
+    <div class="section-num">12</div>
+    <h2>バージョン履歴</h2>
+  </div>
+
+  <div class="ver-history">
+    <div class="ver-entry">
+      <span class="ver-tag latest">ver.2026.5.18</span>最新版
+      <div class="ver-body">
+        ・<strong>AI作成「第35回予想」問題セット340問(はりきゅう180問+あマ指160問)を追加</strong><br>
+        ・同梱問題が合計<strong>4,300問</strong>に拡大<br>
+        ・<strong>本試験モードでAI作成問題を選択した場合、学習履歴・忘却曲線に反映されない仕様に変更</strong>(「学習履歴に反映」チェックの有無に関わらず)<br>
+        ・本試験結果画面の「間違いを復習」を、問1から順に再出題する仕様に変更<br>
+        ・紙試験の採点後の「間違いを復習」が正常動作するよう修正<br>
+        ・<strong>改ざんチェック機能追加</strong>
+      </div>
+    </div>
+    <div class="ver-entry">
+      <span class="ver-tag">ver.2026.5.17</span>
+      <div class="ver-body">
+        ・はりきゅう過去問1,720問（第25〜34回）を追加<br>
+        ・AI作成問題680問（はりきゅう・あマ指 × 全34回/直近10年）を追加<br>
+        ・同梱問題が合計3,960問に拡大<br>
+        ・「今日の演習」を全科目自動分散方式にリニューアル(問題数:10/20/30/40/50・デフォルト20問)<br>
+        ・「科目別演習」を未出題優先・復習日順に変更<br>
+        ・「ランダム出題」モードを廃止<br>
+        ・ホーム画面のメニュー順序を「今日の演習→復習モード→科目別演習→本試験形式モード」に整理
+      </div>
+    </div>
+    <div class="ver-entry">
+      <span class="ver-tag">ver.2026.5.16</span>
+      <div class="ver-body">
+        ・あマ指過去問1,560問（第25〜34回）を同梱化<br>
+        ・初回起動時の自動データ投入機能
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>国試学習アプリ 使用説明書 ver.2026.5.18</p>
+  <p style="margin-top: 4px;">はり師きゅう師・あん摩マッサージ指圧師 国家試験対策</p>
+  <p style="margin-top: 4px; color: #aab5bf;">※解説内容の正確性は保証されません。学習の補助として活用し、不明点は教科書等でご確認ください。</p>
+</footer>
+
+</body>
+</html>
