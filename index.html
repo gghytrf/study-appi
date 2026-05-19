@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="./manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="国試学習">
+<meta name="theme-color" content="#2c5f7c">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
 <title>はり師きゅう師 国試学習アプリ</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -3041,6 +3048,25 @@ const _mC = (function(){
   }
 })();
 
+
+// Service Worker 登録（PWA・オフライン対応）
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => {
+        // 新しいSWが待機中なら自動更新
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'activated') {
+              showToast('アプリを最新版に更新しました');
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('Service Worker登録失敗:', err));
+  });
+}
 
 // 起動
 init().catch(err => {
