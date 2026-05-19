@@ -928,8 +928,6 @@ async function init() {
 
   updateHomeStats();
 
-  // 5日経過バックアップ通知のチェック（最後に実行）
-  await checkBackupReminder();
 }
 
 //=========================================================
@@ -2817,8 +2815,6 @@ async function exportData() {
   a.click();
   URL.revokeObjectURL(url);
   showToast('バックアップを出力しました');
-  // 最終バックアップ日時を記録
-  try { await dbPut('settings', { key: 'lastBackupAt', value: new Date().toISOString() }); } catch (e) {}
 }
 
 async function importData(event) {
@@ -2858,71 +2854,6 @@ function confirmReset() {
   });
 }
 
-
-//=========================================================
-// 5日経過バックアップ通知
-//=========================================================
-const BACKUP_REMINDER_DAYS = 5;
-
-async function checkBackupReminder() {
-  try {
-    const rec = await dbGet('settings', 'lastBackupAt');
-    const lastBackupAt = rec ? rec.value : null;
-    const now = Date.now();
-    let elapsedDays = null;
-    if (lastBackupAt) {
-      elapsedDays = Math.floor((now - new Date(lastBackupAt).getTime()) / (1000 * 60 * 60 * 24));
-    }
-    // 初回（lastBackupAtが無い）の場合は、初回起動日を基準にする（即時通知しない）
-    if (!lastBackupAt) {
-      const firstSeenRec = await dbGet('settings', 'firstSeenAt');
-      if (!firstSeenRec) {
-        // 初回起動 → 今日の日付を記録して終了
-        await dbPut('settings', { key: 'firstSeenAt', value: new Date().toISOString() });
-        return;
-      }
-      const firstSeen = new Date(firstSeenRec.value).getTime();
-      const sinceFirst = Math.floor((now - firstSeen) / (1000 * 60 * 60 * 24));
-      if (sinceFirst >= BACKUP_REMINDER_DAYS) {
-        showBackupReminderBanner(sinceFirst, true);
-      }
-      return;
-    }
-    if (elapsedDays !== null && elapsedDays >= BACKUP_REMINDER_DAYS) {
-      showBackupReminderBanner(elapsedDays, false);
-    }
-  } catch (e) {
-    console.error('バックアップ通知チェック失敗:', e);
-  }
-}
-
-function showBackupReminderBanner(days, isFirst) {
-  // 既存バナーがあれば削除
-  const existing = document.getElementById('backup-reminder-banner');
-  if (existing) existing.remove();
-
-  const banner = document.createElement('div');
-  banner.id = 'backup-reminder-banner';
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#fff3cd;border-bottom:2px solid #ffc107;padding:12px 16px;z-index:9999;box-shadow:0 2px 6px rgba(0,0,0,0.1);display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;';
-  const msg = isFirst
-    ? `📥 学習履歴のバックアップをおすすめします（前回バックアップ未実施・利用開始から${days}日経過）`
-    : `📥 学習履歴のバックアップから${days}日経過しました。バックアップをおすすめします`;
-  banner.innerHTML = `
-    <div style="flex:1;min-width:200px;color:#664d03;">${msg}</div>
-    <button id="backup-now-btn" style="background:#ffc107;color:#212529;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:13px;">今すぐバックアップ</button>
-    <button id="backup-later-btn" style="background:transparent;color:#664d03;border:1px solid #664d03;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;">あとで</button>
-  `;
-  document.body.appendChild(banner);
-
-  document.getElementById('backup-now-btn').onclick = async () => {
-    await exportData();
-    await dbPut('settings', { key: 'lastBackupAt', value: new Date().toISOString() });
-    banner.remove();
-  };
-  document.getElementById('backup-later-btn').onclick = () => {
-    banner.remove();
-  };
-}
 
 //=========================================================
 // ユーティリティ
