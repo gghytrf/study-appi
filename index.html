@@ -904,10 +904,10 @@ async function init() {
   await openDB();
 
   // 更新確認の間隔設定
-  // ネット接続成功時 → 48時間スキップ
-  // オフライン時    → 24時間後に再確認
-  const ONLINE_INTERVAL_MS  = 48 * 60 * 60 * 1000; // 48時間
-  const OFFLINE_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24時間
+  // ネット接続成功時 → 24時間後に再確認
+  // オフライン時    → 12時間後に再確認
+  const ONLINE_INTERVAL_MS  = 24 * 60 * 60 * 1000; // 24時間
+  const OFFLINE_INTERVAL_MS = 12 * 60 * 60 * 1000; // 12時間
 
   const lastCheckRec = await dbGet('settings', 'lastUpdateCheckedAt');
   const lastOfflineRec = await dbGet('settings', 'lastOfflineCheckedAt');
@@ -916,7 +916,7 @@ async function init() {
   const lastOnlineCheck  = lastCheckRec   ? new Date(lastCheckRec.value).getTime()   : 0;
   const lastOfflineCheck = lastOfflineRec ? new Date(lastOfflineRec.value).getTime() : 0;
 
-  // 前回オンライン確認から48時間 かつ 前回オフライン確認から24時間 経過していれば確認
+  // 前回オンライン確認から24時間 かつ 前回オフライン確認から12時間 経過していれば確認
   const shouldCheck = (now - lastOnlineCheck >= ONLINE_INTERVAL_MS) &&
                       (now - lastOfflineCheck >= OFFLINE_INTERVAL_MS);
 
@@ -1022,29 +1022,17 @@ function startDailyMode() {
   }
 
   const totalCount = dailyState.totalCount;
-  const today = new Date().toISOString().slice(0, 10);
-
-  // 本試験出題順
-  const SUBJECT_ORDER = ['医療概論', '衛生学・公衆衛生学', '関係法規', '解剖学', '生理学', '病理学概論', '臨床医学総論', '臨床医学各論', 'リハビリテーション医学', '総合問題(基礎科目)', '東洋医学概論', '経絡経穴概論', '東洋医学臨床論', '総合問題(専門科目)', 'はり理論', 'きゅう理論', 'あマ指理論', 'あん摩マッサージ指圧理論', '不適切問題'];
 
   // 科目ごとに問題をグルーピング(AI作成問題は除外)
   const bySubject = {};
   filtered.forEach(q => {
-    // AI作成問題(yearが文字列)は今日の演習から除外
     if (isNaN(Number(q.year))) return;
     if (!bySubject[q.subject]) bySubject[q.subject] = [];
     bySubject[q.subject].push(q);
   });
 
-  // 存在する科目を出題順でソート
-  const availableSubjects = Object.keys(bySubject).sort((a, b) => {
-    const ai = SUBJECT_ORDER.indexOf(a);
-    const bi = SUBJECT_ORDER.indexOf(b);
-    if (ai !== -1 && bi !== -1) return ai - bi;
-    if (ai !== -1) return -1;
-    if (bi !== -1) return 1;
-    return a.localeCompare(b, 'ja');
-  });
+  // 科目リストをその都度シャッフル（毎回ランダムな科目順になる）
+  const availableSubjects = shuffleArray(Object.keys(bySubject));
 
   if (availableSubjects.length === 0) {
     alert('該当する問題がありません');
@@ -1071,7 +1059,7 @@ function startDailyMode() {
     subjectQueues[subj] = [...shuffledUntried, ...tried];
   }
 
-  // 科目分散: 「ラウンドロビン方式」で各科目から1問ずつ取り、希望数に達するまで繰り返す
+  // ランダムな科目順でラウンドロビン出題（毎回科目ごとの問題数が異なる）
   const picked = [];
   let exhausted = false;
   while (picked.length < totalCount && !exhausted) {
