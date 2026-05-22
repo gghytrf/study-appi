@@ -79,6 +79,8 @@
   .btn.secondary { background: #6c8499; }
   .btn.danger { background: #c0504d; }
   .btn.outline { background: white; color: #2c5f7c; border: 2px solid #2c5f7c; }
+  .btn.mute { background: #fff8e1; color: #8b6914; border: 2px solid #ffc107; }
+  .btn.mute.active { background: #ffc107; color: #212529; border-color: #ffc107; }
 
   .btn-row { display: flex; gap: 8px; }
   .btn-row .btn { flex: 1; }
@@ -477,7 +479,8 @@
         <button class="btn outline" onclick="saveMemo()" style="margin-top: 8px; font-size: 13px; padding: 6px 14px;">メモを保存</button>
       </div>
 
-      <button class="btn full" id="next-btn" onclick="nextQuestion()" style="display:none; margin-top: 12px;">次の問題 →</button>
+      <button class="btn mute full" id="mute-btn" onclick="toggleMuteQuestion()" style="display:none; margin-top: 8px; font-size: 13px;">🚫 今後出題しない</button>
+      <button class="btn full" id="next-btn" onclick="nextQuestion()" style="display:none; margin-top: 8px;">次の問題 →</button>
     </div>
   </div>
 
@@ -570,6 +573,14 @@
       <h2>📆 年度別 学習進度</h2>
       <div id="stats-year-list">
         <div style="color: #7a8a99; text-align: center; padding: 20px 0;">学習履歴がまだありません</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📝 メモ・出題除外 一覧</h2>
+      <div style="font-size: 12px; color: #4a5a6a; margin-bottom: 10px;">メモを記入した問題・出題除外に設定した問題の一覧です。タップすると問題を確認できます。</div>
+      <div id="stats-memo-list">
+        <div style="color: #7a8a99; text-align: center; padding: 20px 0;">メモ・出題除外はありません</div>
       </div>
     </div>
   </div>
@@ -805,7 +816,7 @@ async function loadQuestionData() {
 
 //=========================================================
 const DB_NAME = 'StudyAppDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 let db = null;
 
 function openDB() {
@@ -829,6 +840,9 @@ function openDB() {
       }
       if (!d.objectStoreNames.contains('paperSessions')) {
         d.createObjectStore('paperSessions', { keyPath: 'id' });
+      }
+      if (!d.objectStoreNames.contains('mutedQuestions')) {
+        d.createObjectStore('mutedQuestions', { keyPath: 'questionId' });
       }
     };
   });
@@ -887,6 +901,7 @@ const state = {
   progress: {},
   memos: {},
   settings: { shuffleChoices: false, examType: 'all', excludeYears: [] },
+  mutedQuestions: {},
   currentMode: null,
   currentSubject: null,
   questionQueue: [],
@@ -973,6 +988,9 @@ async function init() {
   // 進捗・メモ・設定読み込み
   const progressList = await dbGetAll('progress');
   progressList.forEach(p => state.progress[p.questionId] = p);
+
+  const mutedList = await dbGetAll('mutedQuestions');
+  mutedList.forEach(m => state.mutedQuestions[m.questionId] = m);
 
   const memoList = await dbGetAll('memos');
   memoList.forEach(m => state.memos[m.questionId] = m.text);
@@ -2265,6 +2283,10 @@ function filterByExamType(questions) {
   if (excludeYears.length > 0) {
     normalQuestions = normalQuestions.filter(q => !excludeYears.includes(Number(q.year)));
   }
+  // 出題除外問題を除外（科目別演習で「出題しない問題」を選んだ場合は除外しない）
+  if (state.currentMode !== 'subject' || state.currentSubject !== MUTED_SUBJECT) {
+    normalQuestions = normalQuestions.filter(q => !isMutedQuestion(q));
+  }
   if (state.settings.examType === 'all') return normalQuestions;
   return normalQuestions.filter(q => q.examType === state.settings.examType);
 }
@@ -2328,6 +2350,7 @@ function goStats() {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('nav-stats').classList.add('active');
   renderStats();
+  renderMemoList();
   showScreen('stats', '学習統計', '');
 }
 
@@ -2594,7 +2617,21 @@ function goSubjectSelect() {
   appendSection('━ PM(専門科目)', pmSubjects);
   if (otherSubjects.length > 0) appendSection('━ その他', otherSubjects);
 
-  if (Object.keys(subjects).length === 0) {
+  // 「出題しない問題」を末尾に追加（1問以上ある場合のみ）
+  const mutedCount = state.questions.filter(q => isMutedQuestion(q) && !isNaN(Number(q.year))).length;
+  if (mutedCount > 0) {
+    const heading = document.createElement('div');
+    heading.style.cssText = 'font-size:12px;color:#7a8a99;font-weight:600;margin:8px 4px 4px;letter-spacing:1px;';
+    heading.textContent = '━ 出題除外';
+    container.appendChild(heading);
+    const div = document.createElement('div');
+    div.className = 'subject-item';
+    div.innerHTML = `<span class="name">🚫 出題しない問題</span><span class="count">${mutedCount}問</span>`;
+    div.onclick = () => startMutedMode();
+    container.appendChild(div);
+  }
+
+  if (Object.keys(subjects).length === 0 && mutedCount === 0) {
     container.innerHTML = '<div class="empty-state"><div class="ico">📭</div><p>問題がありません</p></div>';
   }
   showScreen('subjects', '科目別演習', '科目を選んでください');
@@ -2603,6 +2640,25 @@ function goSubjectSelect() {
 //=========================================================
 // 出題ロジック
 //=========================================================
+function startMutedMode() {
+  // 出題除外問題のみを科目別演習モードで出題
+  const pool = state.questions.filter(q => isMutedQuestion(q) && !isNaN(Number(q.year)));
+  if (pool.length === 0) { showToast('出題除外の問題がありません'); return; }
+  const untried = pool.filter(q => !state.progress[q.id]);
+  const tried = pool.filter(q => state.progress[q.id]);
+  tried.sort((a, b) => {
+    const da = state.progress[a.id]?.nextReviewAt || '9999-12-31';
+    const db = state.progress[b.id]?.nextReviewAt || '9999-12-31';
+    return da.localeCompare(db);
+  });
+  state.questionQueue = [...shuffleArray([...untried]), ...tried];
+  state.currentIndex = 0;
+  state.currentMode = 'subject';
+  state.currentSubject = MUTED_SUBJECT;
+  state.skipProgressSave = false;
+  showQuestion();
+}
+
 function startMode(mode, subject) {
   state.currentMode = mode;
   state.currentSubject = subject;
@@ -2703,6 +2759,7 @@ function showQuestion() {
   document.getElementById('action-buttons').style.display = 'flex';
   document.getElementById('submit-btn').disabled = true;
   document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('mute-btn').style.display = 'none';
 
   let title = '問題演習';
   let subtitle = '';
@@ -2710,6 +2767,7 @@ function showQuestion() {
   else if (state.currentMode === 'subject') subtitle = `科目別: ${state.currentSubject}`;
   else if (state.currentMode === 'daily') subtitle = '今日の演習';
   else if (state.currentMode === 'exam_review') subtitle = '間違いを復習';
+  else if (state.currentMode === 'memo_review') subtitle = 'メモ・出題除外から確認';
 
   showScreen('question', title, subtitle);
 }
@@ -2762,6 +2820,7 @@ function submitAnswer() {
   // ボタン切替
   document.getElementById('action-buttons').style.display = 'none';
   document.getElementById('next-btn').style.display = 'block';
+  showMuteBtn(q.id);
 
   // 進捗保存(忘却曲線)
   // skipProgressSave=trueの場合(AI作成問題の間違い直しなど)は保存しない
@@ -2803,6 +2862,7 @@ function skipAnswer() {
   // ボタン切替
   document.getElementById('action-buttons').style.display = 'none';
   document.getElementById('next-btn').style.display = 'block';
+  showMuteBtn(q.id);
 
   // スキップは「不正解扱い」で進捗保存(翌日復習)
   // skipProgressSave=trueの場合(AI作成問題の間違い直しなど)は保存しない
@@ -2862,6 +2922,117 @@ async function saveMemo() {
   state.memos[state.currentQuestion.id] = text;
   await dbPut('memos', { questionId: state.currentQuestion.id, text });
   showToast('メモを保存しました');
+}
+
+//=========================================================
+// 出題除外（「今後出題しない」）機能
+//=========================================================
+const MUTED_SUBJECT = '出題しない問題';
+
+function showMuteBtn(qid) {
+  const btn = document.getElementById('mute-btn');
+  if (!btn) return;
+  // 今日の演習・科目別演習のみ表示（本試験・復習モードは非表示）
+  const showModes = ['daily', 'subject'];
+  if (!showModes.includes(state.currentMode)) {
+    btn.style.display = 'none';
+    return;
+  }
+  btn.style.display = 'block';
+  const isMuted = state.mutedQuestions && state.mutedQuestions[qid];
+  btn.textContent = isMuted ? '✅ 出題除外を解除' : '🚫 今後出題しない';
+  btn.classList.toggle('active', !!isMuted);
+}
+
+async function toggleMuteQuestion() {
+  const q = state.currentQuestion;
+  if (!q) return;
+  if (!state.mutedQuestions) state.mutedQuestions = {};
+
+  const isMuted = !!state.mutedQuestions[q.id];
+  if (isMuted) {
+    // 解除：元の科目に戻す
+    delete state.mutedQuestions[q.id];
+    await dbDelete('memos', '__muted__' + q.id).catch(() => {});
+    // IndexedDB の muted ストアから削除
+    await dbDelete('mutedQuestions', q.id).catch(() => {});
+    showToast('出題除外を解除しました');
+  } else {
+    // 除外設定
+    state.mutedQuestions[q.id] = { questionId: q.id, originalSubject: q.subject };
+    await dbPut('mutedQuestions', { questionId: q.id, originalSubject: q.subject });
+    showToast('「出題しない問題」に設定しました');
+  }
+
+  // ボタン表示更新
+  showMuteBtn(q.id);
+}
+
+function isMutedQuestion(q) {
+  return state.mutedQuestions && !!state.mutedQuestions[q.id];
+}
+
+//=========================================================
+// メモ・出題除外 一覧
+//=========================================================
+async function renderMemoList() {
+  const container = document.getElementById('stats-memo-list');
+  if (!container) return;
+
+  // メモあり問題を収集
+  const memoIds = Object.entries(state.memos)
+    .filter(([, text]) => text && text.trim())
+    .map(([id]) => id);
+
+  // 出題除外問題を収集
+  const mutedIds = Object.keys(state.mutedQuestions || {});
+
+  // 合わせてユニーク化
+  const allIds = [...new Set([...memoIds, ...mutedIds])];
+
+  if (allIds.length === 0) {
+    container.innerHTML = '<div style="color:#7a8a99;text-align:center;padding:20px 0;">メモ・出題除外はありません</div>';
+    return;
+  }
+
+  // 問題マスタ引き当て
+  const masterById = {};
+  state.questions.forEach(q => { masterById[q.id] = q; });
+
+  let html = '';
+  for (const id of allIds) {
+    const q = masterById[id];
+    const memo = state.memos[id] || '';
+    const isMuted = !!(state.mutedQuestions && state.mutedQuestions[id]);
+    const typeLabel = q ? (q.examType === 'amashi' ? 'あマ指' : 'はりきゅう') : '';
+    const yearLabel = q ? formatYearLabel(q.year) : '';
+
+    html += `
+      <div onclick="openMemoQuestion('${escapeHtml(id)}')" style="padding:12px;border-bottom:1px solid #eef4f8;cursor:pointer;transition:background 0.1s;" onmouseenter="this.style.background='#f5f7fa'" onmouseleave="this.style.background=''">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center;">
+          ${isMuted ? '<span style="font-size:11px;background:#ffc107;color:#212529;padding:2px 8px;border-radius:10px;font-weight:600;">🚫 出題除外</span>' : ''}
+          ${memo ? '<span style="font-size:11px;background:#2c5f7c;color:white;padding:2px 8px;border-radius:10px;">📝 メモあり</span>' : ''}
+          ${q ? `<span style="font-size:11px;color:#7a8a99;">${escapeHtml(typeLabel)} ${escapeHtml(yearLabel)} 問${q.questionNo}</span>` : `<span style="font-size:11px;color:#7a8a99;">ID: ${escapeHtml(id)}</span>`}
+        </div>
+        <div style="font-size:13px;color:#2c3e50;line-height:1.5;margin-bottom:${memo ? '6px' : '0'};">${q ? escapeHtml(q.questionText.slice(0, 60)) + (q.questionText.length > 60 ? '…' : '') : '（問題データなし）'}</div>
+        ${memo ? `<div style="font-size:12px;color:#8b6914;background:#fffbf0;padding:6px 8px;border-radius:6px;border-left:3px solid #ffc107;">${escapeHtml(memo.slice(0, 80))}${memo.length > 80 ? '…' : ''}</div>` : ''}
+      </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function openMemoQuestion(qid) {
+  const masterById = {};
+  state.questions.forEach(q => { masterById[q.id] = q; });
+  const q = masterById[qid];
+  if (!q) { showToast('問題データが見つかりません'); return; }
+  // メモ閲覧モードとして1問だけ出題
+  state.questionQueue = [q];
+  state.currentIndex = 0;
+  state.currentMode = 'memo_review';
+  state.currentSubject = null;
+  state.skipProgressSave = true;
+  showQuestion();
 }
 
 //=========================================================
