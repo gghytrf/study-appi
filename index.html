@@ -174,6 +174,24 @@
   .daily-subject-row .info { font-size: 11px; color: #7a8a99; white-space: nowrap; }
   .daily-section-label { font-size: 11px; color: #7a8a99; font-weight: 600; margin: 10px 4px 4px; letter-spacing: 1px; }
 
+  /* 検索結果カード */
+  .search-result-card {
+    background: white; border-radius: 10px; padding: 14px 16px;
+    margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    cursor: pointer; transition: all 0.15s;
+    border-left: 3px solid #5a8fa8;
+  }
+  .search-result-card:active { transform: scale(0.99); background: #f5f7fa; }
+  .search-result-card .meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+  .search-result-card .q-text { font-size: 14px; line-height: 1.6; color: #2c3e50; }
+  .search-result-card .q-text mark {
+    background: #fff176; color: inherit; border-radius: 2px; padding: 0 1px;
+  }
+  .search-result-card .choices-preview { font-size: 12px; color: #7a8a99; margin-top: 5px; }
+  .search-result-card .choices-preview mark {
+    background: #fff176; color: inherit; border-radius: 2px; padding: 0 1px;
+  }
+
   /* 紙試験結果入力 */
   .paper-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
   .paper-cell { display: flex; flex-direction: column; align-items: center; padding: 4px; border: 1px solid #d4dde4; border-radius: 6px; background: white; }
@@ -239,6 +257,89 @@
       <span class="icon">📝</span><span class="label" style="color: white;">本試験形式モード</span>
       <div class="desc" style="color: rgba(255,255,255,0.85);">本番同様180問/160問で実施</div>
     </button>
+    <button class="menu-btn" onclick="goSearch()">
+      <span class="icon">🔍</span><span class="label">問題検索</span>
+      <div class="desc">問題文・選択肢からキーワード検索</div>
+    </button>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 0;">
+      <button class="menu-btn" onclick="goMemoList()" style="margin-bottom: 0;">
+        <span class="icon">📝</span><span class="label" style="font-size: 14px;">メモ一覧</span>
+        <div class="desc">メモを書いた問題</div>
+      </button>
+      <button class="menu-btn" onclick="goMutedList()" style="margin-bottom: 0;">
+        <span class="icon">🚫</span><span class="label" style="font-size: 14px;">出題除外一覧</span>
+        <div class="desc">除外設定した問題</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- メモ一覧画面 -->
+  <div class="screen" id="screen-memo-list">
+    <div class="card">
+      <h2>📝 メモ一覧</h2>
+      <div style="font-size: 12px; color: #4a5a6a; margin-bottom: 10px;">メモを記入した問題の一覧です。タップすると問題を確認できます。</div>
+      <div id="home-memo-list">
+        <div style="color: #7a8a99; text-align: center; padding: 20px 0;">メモはありません</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 出題除外一覧画面 -->
+  <div class="screen" id="screen-muted-list">
+    <div class="card">
+      <h2>🚫 出題除外一覧</h2>
+      <div style="font-size: 12px; color: #4a5a6a; margin-bottom: 10px;">「今後出題しない」に設定した問題の一覧です。タップすると問題を確認・除外解除できます。</div>
+      <div id="home-muted-list">
+        <div style="color: #7a8a99; text-align: center; padding: 20px 0;">出題除外はありません</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 問題検索画面 -->
+  <div class="screen" id="screen-search">
+    <div class="card">
+      <h2>🔍 問題検索</h2>
+
+      <!-- 検索対象の選択 -->
+      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; background: #f5f7fa; border: 2px solid #d4dde4; border-radius: 10px; cursor: pointer; font-size: 14px; transition: all 0.15s;" id="search-target-q-label">
+          <input type="radio" name="search-target" value="question" checked id="search-target-q" style="accent-color: #2c5f7c; width: 16px; height: 16px;">
+          問題文から検索
+        </label>
+        <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; background: #f5f7fa; border: 2px solid #d4dde4; border-radius: 10px; cursor: pointer; font-size: 14px; transition: all 0.15s;" id="search-target-c-label">
+          <input type="radio" name="search-target" value="choices" id="search-target-c" style="accent-color: #2c5f7c; width: 16px; height: 16px;">
+          選択肢から検索
+        </label>
+      </div>
+
+      <!-- 検索ヒント -->
+      <div style="font-size: 12px; color: #7a8a99; background: #f5f7fa; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; line-height: 1.7;">
+        例：<strong style="color: #2c5f7c;">橈骨神経</strong>　または　<strong style="color: #2c5f7c;">橈骨 神経</strong>（スペース区切りでAND検索）<br>
+        全角・半角、大文字・小文字はどちらでもヒットします（<strong>3mmHg</strong> ＝ <strong>３ｍｍＨＧ</strong>）<br>
+        ※ 50件以上ヒットする場合は結果を表示できません。ワードを追加して絞り込んでください。
+      </div>
+
+      <!-- 検索ボックス -->
+      <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <input type="text" id="search-input"
+          placeholder="検索ワードを入力"
+          style="flex: 1; padding: 12px 14px; border: 2px solid #d4dde4; border-radius: 10px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.15s;"
+          oninput="onSearchInput()"
+          onfocus="this.style.borderColor='#2c5f7c'"
+          onblur="this.style.borderColor='#d4dde4'"
+        >
+        <button class="btn" onclick="execSearch()" style="padding: 12px 18px; flex-shrink: 0;">検索</button>
+      </div>
+
+      <!-- メッセージ/ステータス -->
+      <div id="search-status" style="font-size: 13px; color: #7a8a99; text-align: center; padding: 4px 0; min-height: 24px;"></div>
+    </div>
+
+    <!-- 結果リスト -->
+    <div id="search-results" style="display: none;">
+      <div style="font-size: 12px; color: #7a8a99; margin: 0 4px 8px; font-weight: 600;" id="search-result-label"></div>
+      <div id="search-result-list"></div>
+    </div>
   </div>
 
   <!-- 科目選択画面 -->
@@ -363,6 +464,16 @@
           <span class="slider"></span>
         </label>
       </div>
+      <div class="setting-row">
+        <div>
+          <div class="lbl">出題除外問題を含まない</div>
+          <div class="desc">「今後出題しない」に設定した問題を除外（科目の問題数が減る場合あり）</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="exam-exclude-muted">
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
 
     <button class="btn full" onclick="startExamMode()" style="font-size: 16px; padding: 16px;">本試験を開始</button>
@@ -481,6 +592,7 @@
 
       <button class="btn mute full" id="mute-btn" onclick="toggleMuteQuestion()" style="display:none; margin-top: 8px; font-size: 13px;">🚫 今後出題しない</button>
       <button class="btn full" id="next-btn" onclick="nextQuestion()" style="display:none; margin-top: 8px;">次の問題 →</button>
+      <button class="btn outline full" id="back-to-list-btn" onclick="backToList()" style="display:none; margin-top: 8px; font-size: 13px;">← 一覧に戻る</button>
     </div>
   </div>
 
@@ -576,17 +688,27 @@
       </div>
     </div>
 
-    <div class="card">
-      <h2>📝 メモ・出題除外 一覧</h2>
-      <div style="font-size: 12px; color: #4a5a6a; margin-bottom: 10px;">メモを記入した問題・出題除外に設定した問題の一覧です。タップすると問題を確認できます。</div>
-      <div id="stats-memo-list">
-        <div style="color: #7a8a99; text-align: center; padding: 20px 0;">メモ・出題除外はありません</div>
-      </div>
-    </div>
   </div>
 
   <!-- 設定画面 -->
   <div class="screen" id="screen-settings">
+
+    <div class="card">
+      <h2>このアプリについて</h2>
+      <div style="font-size: 13px; color: #4a5a6a; line-height: 1.7;">
+        <p>はり師きゅう師・あマ指の国家試験対策学習アプリ</p>
+        <p style="margin-top: 8px;">アプリ: ver.2026.6.1</p>
+        <p style="margin-top: 4px;" id="setting-q-version">問題データ: 読み込み中...</p>
+        <p style="margin-top: 8px;" id="credit-author-name">制作者：大阪行岡医療専門学校長柄校　鍼灸科　75期生　藤本</p>
+      </div>
+      <button class="btn outline full" onclick="openManual()" style="margin-top: 14px; font-size: 14px;">
+        📖 使用説明書を開く
+      </button>
+      <button class="btn outline full" onclick="manualUpdateCheck()" id="update-check-btn" style="margin-top: 8px; font-size: 14px;">
+        🔄 更新を確認
+      </button>
+    </div>
+
     <div class="card">
       <h2>出題設定</h2>
       <div class="setting-row">
@@ -612,27 +734,13 @@
       </div>
     </div>
 
-
     <div class="card">
       <h2>出題しない年度</h2>
-      <div style="font-size: 13px; color: #4a5a6a; margin-bottom: 10px;">チェックした年度は通常演習から除外されます。</div>
-      <div id="settings-year-list" style="max-height: 240px; overflow-y: auto;">
+      <div style="font-size: 13px; color: #4a5a6a; margin-bottom: 10px;">チェックした年度の問題は、今日の演習・科目別演習・復習モード・本試験形式モード・問題検索・メモ一覧・出題除外一覧のすべてで表示されません。</div>
+      <div id="settings-year-list" style="max-height: 400px; overflow-y: auto;">
         <div style="color: #7a8a99; text-align: center; padding: 16px;">読み込み中...</div>
       </div>
     </div>
-
-    <div class="card">
-      <h2>忘却曲線設定</h2>
-      <div class="setting-row">
-        <div class="lbl">正解時の次回</div>
-        <span style="color: #7a8a99; font-size: 13px;">2日後 → 3日 → 7日 → 14日 → 30日</span>
-      </div>
-      <div class="setting-row">
-        <div class="lbl">不正解時の次回</div>
-        <span style="color: #7a8a99; font-size: 13px;">翌日にリセット</span>
-      </div>
-    </div>
-
 
     <div class="card">
       <h2>学習履歴のバックアップ</h2>
@@ -660,19 +768,6 @@
       </div>
     </div>
 
-    <div class="card">
-      <h2>このアプリについて</h2>
-      <div style="font-size: 13px; color: #4a5a6a; line-height: 1.7;">
-        <p>はり師きゅう師・あマ指の国家試験対策学習アプリ</p>
-        <p style="margin-top: 8px;">アプリ: ver.2026.5.21</p>
-        <p style="margin-top: 4px;" id="setting-q-version">問題データ: 読み込み中...</p>
-        <p style="margin-top: 8px;" id="credit-author-name">制作者：75期生　藤本</p>
-        <p id="credit-author-affiliation">大阪行岡医療専門学校長柄校　鍼灸科</p>
-      </div>
-      <button class="btn outline full" onclick="openManual()" style="margin-top: 14px; font-size: 14px;">
-        📖 使用説明書を開く
-      </button>
-    </div>
   </div>
 
 </div>
@@ -723,11 +818,11 @@
 
 //=========================================================
 // アプリバージョン（更新年月日）
-const APP_VERSION = '2026.5.21';
+const APP_VERSION = '2026.6.1';
 
 // [A] 75e69c9fe38080e897a4e69cac (識別定数)
 const _mA = (function(){
-  const _s = ['NzXmnJ/n', 'lJ/jgIDo', 'l6TmnKwg', 'LyDlpKfp', 'mKrooYzl', 'sqHljLvn', 'mYLlsILp', 'loDlrabm', 'oKHplbfm', 'n4TmoKHj', 'gIDpjbzn', 'gbjnp5E='];
+  const _s = ['5aSn6Ziq','6KGM5bKh','5Yy755mC','5bCC6ZaA','5a2m5qCh','6ZW35p+E','5qCh44CA','6Y2854G4','56eR44CA','NzXmnJ/n','lJ/jgIDo','l6TmnKw='];
   return _s.join('');
 })();
 
@@ -919,58 +1014,16 @@ const state = {
 async function init() {
   await openDB();
 
-  // 更新確認の間隔設定
-  // ネット接続成功時 → 24時間後に再確認
-  // オフライン時    → 12時間後に再確認
-  const ONLINE_INTERVAL_MS  = 24 * 60 * 60 * 1000; // 24時間
-  const OFFLINE_INTERVAL_MS = 12 * 60 * 60 * 1000; // 12時間
-
+  // 更新確認: 前回確認（成功・失敗問わず）から48時間経過時に確認
+  const CHECK_INTERVAL_MS = 48 * 60 * 60 * 1000; // 48時間
   const lastCheckRec = await dbGet('settings', 'lastUpdateCheckedAt');
-  const lastOfflineRec = await dbGet('settings', 'lastOfflineCheckedAt');
   const now = Date.now();
+  const lastCheck = lastCheckRec ? new Date(lastCheckRec.value).getTime() : 0;
 
-  const lastOnlineCheck  = lastCheckRec   ? new Date(lastCheckRec.value).getTime()   : 0;
-  const lastOfflineCheck = lastOfflineRec ? new Date(lastOfflineRec.value).getTime() : 0;
-
-  // 前回オンライン確認から24時間 かつ 前回オフライン確認から12時間 経過していれば確認
-  const shouldCheck = (now - lastOnlineCheck >= ONLINE_INTERVAL_MS) &&
-                      (now - lastOfflineCheck >= OFFLINE_INTERVAL_MS);
-
-  if (shouldCheck) {
-    const online = await loadQuestionData();
-    if (online) {
-      // オンライン成功 → 48時間スキップ用タイムスタンプを更新
-      await dbPut('settings', { key: 'lastUpdateCheckedAt',  value: new Date().toISOString() });
-      await dbPut('settings', { key: 'lastOfflineCheckedAt', value: new Date().toISOString() });
-
-      // バージョン比較（questions.jsonのバージョン情報のみ使用）
-      const savedAppVer = await dbGet('settings', 'appVersion');
-      const savedQVer   = await dbGet('settings', 'questionDataVersion');
-      const appVerOld   = savedAppVer ? savedAppVer.value : null;
-      const qVerOld     = savedQVer   ? savedQVer.value   : null;
-      const appUpdated  = !appVerOld || compareVersion(APP_VERSION, appVerOld) > 0;
-      const qUpdated    = QUESTION_DATA_VERSION && (!qVerOld || compareVersion(QUESTION_DATA_VERSION, qVerOld) > 0);
-
-      if (appUpdated || qUpdated) {
-        // 更新あり → 問題データをIndexedDBに再投入して通知
-        const tx = db.transaction('questions', 'readwrite');
-        tx.objectStore('questions').clear();
-        await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
-        for (const q of BUNDLED_QUESTIONS) await dbPut('questions', q);
-        await dbPut('settings', { key: 'appVersion',          value: APP_VERSION });
-        if (QUESTION_DATA_VERSION)
-          await dbPut('settings', { key: 'questionDataVersion', value: QUESTION_DATA_VERSION });
-        showToast(`問題データを更新しました（ver.${QUESTION_DATA_VERSION || APP_VERSION}）`);
-      }
-      // 更新なし → 何も表示しない
-
-    } else {
-      // オフライン → 24時間後に再確認するためオフライン確認時刻だけ更新
-      await dbPut('settings', { key: 'lastOfflineCheckedAt', value: new Date().toISOString() });
-      console.info('オフラインのためキャッシュデータで動作します');
-    }
+  if (now - lastCheck >= CHECK_INTERVAL_MS) {
+    await performUpdateCheck(false); // サイレント実行（更新なしは表示しない）
   }
-  // スキップ条件内 → 何もせずキャッシュで動作継続
+  // 48時間以内はスキップ
 
   // IndexedDBからデータを取得（オフライン時もここで問題が取れる）
   const cachedQuestions = await dbGetAll('questions');
@@ -1194,7 +1247,7 @@ function getQuestionsForSection(row, allQuestions, yearFilter, excludeUnsuitable
 }
 
 // 本試験形式の問題抽出(科目別に必要数を抜粋)
-function buildExamQuestions(examType, allQuestions, yearFilter) {
+function buildExamQuestions(examType, allQuestions, yearFilter, excludeMuted = false) {
   const structure = EXAM_STRUCTURE[examType];
   const result = {
     questions: [],
@@ -1202,9 +1255,21 @@ function buildExamQuestions(examType, allQuestions, yearFilter) {
     shortages: []
   };
 
+  // 除外年度フィルターを適用（AI作成問題はyearが文字列のため数値変換できない→除外年度対象外）
+  const excludeYears = state.settings.excludeYears || [];
+  let baseQuestions = allQuestions;
+  if (excludeYears.length > 0) {
+    baseQuestions = allQuestions.filter(q => {
+      const yr = Number(q.year);
+      return isNaN(yr) || !excludeYears.includes(yr);
+    });
+  }
+
   // 本試験は本来不適切問題を含まないので、念のため除外
   for (const row of structure.sections) {
-    const pool = getQuestionsForSection(row, allQuestions, yearFilter, true);
+    let pool = getQuestionsForSection(row, baseQuestions, yearFilter, true);
+    // 出題除外問題を除外（オプション選択時のみ）
+    if (excludeMuted) pool = pool.filter(q => !isMutedQuestion(q));
     const needed = row.count;
     const available = pool.length;
     const taken = Math.min(needed, available);
@@ -1343,6 +1408,7 @@ function startExamMode() {
   const method = document.querySelector('input[name="exam-method"]:checked').value;
   let recordHistory = document.getElementById('exam-record-history').checked;
   const shuffleChoices = document.getElementById('exam-shuffle-choices').checked;
+  const excludeMuted = document.getElementById('exam-exclude-muted').checked;
 
   // AI作成問題の場合は、チェックの有無に関わらず学習履歴に反映しない
   if (source === 'original') {
@@ -1376,7 +1442,7 @@ function startExamMode() {
   }
 
   // 科目構成に従って問題抽出
-  const buildResult = buildExamQuestions(examType, state.questions, yearFilter);
+  const buildResult = buildExamQuestions(examType, state.questions, yearFilter, excludeMuted);
 
   if (buildResult.questions.length === 0) {
     alert('該当する問題が一切ありません。問題データを取り込んでください。');
@@ -1902,11 +1968,11 @@ ${renderSection('午後(PM)', pmQs, amQs.length + 1, amQs.length)}
 //=========================================================
 // [B] アプリ属性定数 (内部管理用)
 const _mB = (function(){
-  const _d = [0x6d,0x6f,0xbc,0xc6,0xc5,0xbd,0xce,0xc5,0xb9,0xda,0xda,0xb2,0xcd,0xfe,
-              0xbc,0xc6,0xf6,0x7a,0x75,0x7a,0xbf,0xfe,0xfd,0xb3,0xc2,0xf0,0xb2,0xfb,
-              0xd6,0xbf,0xe8,0xfb,0xbf,0xd6,0xe1,0xbd,0xc3,0xd8,0xbf,0xea,0xd8,0xb3,
-              0xcc,0xda,0xbf,0xf7,0xfc,0xbc,0xfa,0xfb,0xb3,0xcf,0xed,0xbc,0xc5,0xde,
-              0xbc,0xfa,0xfb,0xb9,0xda,0xda,0xb3,0xd7,0xe6,0xbd,0xdb,0xe2,0xbd,0xfd,0xcb];
+  const _d = [0xbf,0xfe,0xfd,0xb3,0xc2,0xf0,0xb2,0xfb,0xd6,0xbf,0xe8,0xfb,0xbf,0xd6,
+              0xe1,0xbd,0xc3,0xd8,0xbf,0xea,0xd8,0xb3,0xcc,0xda,0xbf,0xf7,0xfc,0xbc,
+              0xfa,0xfb,0xb3,0xcf,0xed,0xbc,0xc5,0xde,0xbc,0xfa,0xfb,0xb9,0xda,0xda,
+              0xb3,0xd7,0xe6,0xbd,0xdb,0xe2,0xbd,0xfd,0xcb,0xb9,0xda,0xda,0x6d,0x6f,
+              0xbc,0xc6,0xc5,0xbd,0xce,0xc5,0xb9,0xda,0xda,0xb2,0xcd,0xfe,0xbc,0xc6,0xf6];
   return _d.map(b => b ^ 0x5A);
 })();
 const paperState = {
@@ -2219,6 +2285,222 @@ function reviewExamWrong() {
 }
 
 //=========================================================
+// 問題検索
+//=========================================================
+function goSearch() {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  showScreen('search', '問題検索', '問題文・選択肢から検索');
+  // ラジオボタンの見た目を更新
+  updateSearchTargetUI();
+  // 前回の結果をリセット
+  document.getElementById('search-status').textContent = '';
+  document.getElementById('search-results').style.display = 'none';
+  // ラジオ変更時にUIを更新
+  document.querySelectorAll('input[name="search-target"]').forEach(r => {
+    r.onchange = updateSearchTargetUI;
+  });
+  // Enterキーで検索
+  const input = document.getElementById('search-input');
+  input.onkeydown = (e) => { if (e.key === 'Enter') execSearch(); };
+}
+
+function updateSearchTargetUI() {
+  const qLabel = document.getElementById('search-target-q-label');
+  const cLabel = document.getElementById('search-target-c-label');
+  const qChecked = document.getElementById('search-target-q').checked;
+  if (qLabel) {
+    qLabel.style.borderColor = qChecked ? '#2c5f7c' : '#d4dde4';
+    qLabel.style.background  = qChecked ? '#e3f0f7' : '#f5f7fa';
+    qLabel.style.fontWeight  = qChecked ? '600' : '400';
+  }
+  if (cLabel) {
+    cLabel.style.borderColor = !qChecked ? '#2c5f7c' : '#d4dde4';
+    cLabel.style.background  = !qChecked ? '#e3f0f7' : '#f5f7fa';
+    cLabel.style.fontWeight  = !qChecked ? '600' : '400';
+  }
+}
+
+function onSearchInput() {
+  // 入力中はステータスをクリア
+  document.getElementById('search-status').textContent = '';
+}
+
+// 全角↔半角を統一する正規化（英数字・記号を半角に、カタカナは全角に統一）
+function normalizeText(str) {
+  if (!str) return '';
+  return str
+    // 全角英数字・記号 → 半角
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+    // 全角スペース → 半角
+    .replace(/　/g, ' ')
+    // 半角カタカナ → 全角カタカナ
+    .replace(/[\uFF65-\uFF9F]/g, s => {
+      const map = {
+        'ｦ':'ヲ','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ｭ':'ュ','ｮ':'ョ',
+        'ｯ':'ッ','ｰ':'ー','ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ',
+        'ｸ':'ク','ｹ':'ケ','ｺ':'コ','ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ',
+        'ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト','ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ',
+        'ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ','ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ',
+        'ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ',
+        'ﾜ':'ワ','ﾝ':'ン','ﾞ':'゛','ﾟ':'゜','･':'・','ｦ':'ヲ','ｰ':'ー','｢':'「','｣':'」','､':'、','｡':'。'
+      };
+      return map[s] || s;
+    })
+    .toLowerCase();
+}
+
+function execSearch() {
+  const raw      = (document.getElementById('search-input').value || '').trim();
+  const target   = document.querySelector('input[name="search-target"]:checked').value;
+  const statusEl = document.getElementById('search-status');
+  const resultsWrap = document.getElementById('search-results');
+
+  // ① 未入力チェック
+  if (!raw) {
+    statusEl.style.color = '#e09b2d';
+    statusEl.textContent = '⚠️ 検索ワードを入力してください';
+    resultsWrap.style.display = 'none';
+    return;
+  }
+
+  // スペース（全角・半角）で分割してAND条件化、空文字除去・正規化
+  const keywords = raw.split(/[\s　]+/).filter(k => k.length > 0).map(k => normalizeText(k));
+
+  // 全問題から検索（AI作成問題は除外、除外年度も除く、試験種別フィルターは考慮しない）
+  const excludeYears = state.settings.excludeYears || [];
+  const allQ = state.questions.filter(q => {
+    const yr = Number(q.year);
+    if (isNaN(yr)) return false;          // AI作成問題（yearが数値以外）は検索対象外
+    return !excludeYears.includes(yr);
+  });
+
+  // ② 全キーワードがすべてヒットする問題を抽出（AND検索・正規化済みテキストで比較）
+  const matched = allQ.filter(q => {
+    if (target === 'question') {
+      const text = normalizeText(q.questionText);
+      return keywords.every(kw => text.includes(kw));
+    } else {
+      const allChoices = normalizeText((q.choices || []).join(' '));
+      return keywords.every(kw => allChoices.includes(kw));
+    }
+  });
+
+  // ③ 50件以上チェック
+  if (matched.length >= 50) {
+    statusEl.style.color = '#e09b2d';
+    statusEl.textContent = `⚠️ ${matched.length}件以上ヒットしました。より詳細なワードで検索してください。`;
+    resultsWrap.style.display = 'none';
+    return;
+  }
+
+  // ④ 0件
+  if (matched.length === 0) {
+    statusEl.style.color = '#7a8a99';
+    statusEl.textContent = '該当する問題が見つかりませんでした。';
+    resultsWrap.style.display = 'none';
+    return;
+  }
+
+  // ⑤ 結果表示
+  const kwLabel = keywords.length > 1 ? keywords.map(k => `「${k}」`).join(' AND ') : `「${keywords[0]}」`;
+  statusEl.style.color = '#2c5f7c';
+  statusEl.textContent = `${matched.length}件 ヒット（${kwLabel}）`;
+
+  document.getElementById('search-result-label').textContent =
+    `検索結果: ${matched.length}件（タップで問題を確認）`;
+
+  const listEl = document.getElementById('search-result-list');
+  listEl.innerHTML = '';
+
+  // 複数キーワードをすべてハイライトする関数（正規化して位置を特定し元テキストに印をつける）
+  function highlight(text) {
+    if (!text) return '';
+    // 正規化済みテキストで各キーワードの出現位置を特定し、元テキストに<mark>を付ける
+    const normText = normalizeText(text);
+    // マークすべき範囲を収集
+    const ranges = [];
+    keywords.forEach(kw => {
+      const kwEsc = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(kwEsc, 'gi');
+      let m;
+      while ((m = re.exec(normText)) !== null) {
+        ranges.push([m.index, m.index + m[0].length]);
+      }
+    });
+    if (ranges.length === 0) return escapeHtml(text);
+    // 範囲をマージ・ソート
+    ranges.sort((a, b) => a[0] - b[0]);
+    const merged = [];
+    ranges.forEach(([s, e]) => {
+      if (merged.length && s <= merged[merged.length - 1][1]) {
+        merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], e);
+      } else {
+        merged.push([s, e]);
+      }
+    });
+    // 元テキストを<mark>で分割（位置はnormTextと同じ文字数なので共用可）
+    let result = '';
+    let pos = 0;
+    merged.forEach(([s, e]) => {
+      result += escapeHtml(text.slice(pos, s));
+      result += '<mark>' + escapeHtml(text.slice(s, e)) + '</mark>';
+      pos = e;
+    });
+    result += escapeHtml(text.slice(pos));
+    return result;
+  }
+
+  matched.forEach(q => {
+    const card = document.createElement('div');
+    card.className = 'search-result-card';
+
+    const typeLabel = q.examType === 'hari_kyu' ? 'はりきゅう' : q.examType === 'amashi' ? 'あマ指' : q.examType;
+    const typeCls   = q.examType === 'amashi' ? 'exam-type amashi' : 'exam-type';
+
+    // 選択肢プレビュー（いずれかのキーワードがヒットした選択肢を表示）
+    let choicesHtml = '';
+    if (target === 'choices') {
+      const hitChoices = (q.choices || [])
+        .map((c, i) => ({ c, i }))
+        .filter(({ c }) => keywords.some(kw => (c || '').toLowerCase().includes(kw)));
+      choicesHtml = `<div class="choices-preview">`
+        + hitChoices.map(({ c, i }) => `<div>${i + 1}. ${highlight(c)}</div>`).join('')
+        + `</div>`;
+    }
+
+    card.innerHTML = `
+      <div class="meta">
+        <span class="badge ${typeCls}">${escapeHtml(typeLabel)}</span>
+        <span class="badge">第${escapeHtml(String(q.year))}回</span>
+        <span class="badge subject">${escapeHtml(q.subject)}</span>
+        <span style="font-size: 12px; color: #7a8a99; margin-left: auto;">問${escapeHtml(String(q.questionNo))}</span>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:${(state.memos[q.id] && state.memos[q.id].trim()) || (state.mutedQuestions && state.mutedQuestions[q.id]) ? '6px' : '0'};">
+        ${(state.memos[q.id] && state.memos[q.id].trim()) ? '<span style="font-size:11px;background:#2c5f7c;color:white;padding:2px 8px;border-radius:10px;">📝 メモあり</span>' : ''}
+        ${(state.mutedQuestions && state.mutedQuestions[q.id]) ? '<span style="font-size:11px;background:#ffc107;color:#212529;padding:2px 8px;border-radius:10px;font-weight:600;">🚫 出題除外</span>' : ''}
+      </div>
+      <div class="q-text">${highlight(q.questionText)}</div>
+      ${choicesHtml}
+    `;
+
+    card.onclick = () => openSearchedQuestion(q);
+    listEl.appendChild(card);
+  });
+
+  resultsWrap.style.display = 'block';
+}
+
+// 検索結果から1問を単独で演習画面へ表示
+function openSearchedQuestion(q) {
+  state.questionQueue   = [q];
+  state.currentIndex    = 0;
+  state.currentMode     = 'search';
+  state.currentSubject  = null;
+  state.skipProgressSave = false;
+  showQuestion();
+}
+
+//=========================================================
 // ホーム画面
 //=========================================================
 function updateHomeStats() {
@@ -2332,6 +2614,55 @@ function goSettings() {
   showScreen('settings', '設定', '');
 }
 
+//=========================================================
+// 更新確認（自動・手動共用）
+//=========================================================
+async function performUpdateCheck(manual = false) {
+  const btn = document.getElementById('update-check-btn');
+  if (manual && btn) { btn.disabled = true; btn.textContent = '🔄 確認中...'; }
+
+  const online = await loadQuestionData();
+
+  // 成功・失敗どちらでも lastUpdateCheckedAt を更新（次回48時間後）
+  await dbPut('settings', { key: 'lastUpdateCheckedAt', value: new Date().toISOString() });
+
+  if (online) {
+    const savedAppVer = await dbGet('settings', 'appVersion');
+    const savedQVer   = await dbGet('settings', 'questionDataVersion');
+    const appVerOld   = savedAppVer ? savedAppVer.value : null;
+    const qVerOld     = savedQVer   ? savedQVer.value   : null;
+    const appUpdated  = !appVerOld || compareVersion(APP_VERSION, appVerOld) > 0;
+    const qUpdated    = QUESTION_DATA_VERSION && (!qVerOld || compareVersion(QUESTION_DATA_VERSION, qVerOld) > 0);
+
+    if (appUpdated || qUpdated) {
+      const tx = db.transaction('questions', 'readwrite');
+      tx.objectStore('questions').clear();
+      await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
+      for (const q of BUNDLED_QUESTIONS) await dbPut('questions', q);
+      await dbPut('settings', { key: 'appVersion', value: APP_VERSION });
+      if (QUESTION_DATA_VERSION)
+        await dbPut('settings', { key: 'questionDataVersion', value: QUESTION_DATA_VERSION });
+      state.questions = await dbGetAll('questions');
+      updateHomeStats();
+      showToast(`問題データを更新しました（ver.${QUESTION_DATA_VERSION || APP_VERSION}）`);
+      // 設定画面のバージョン表示を更新
+      const el = document.getElementById('setting-q-version');
+      if (el) el.textContent = '問題データ: ver.' + (QUESTION_DATA_VERSION || '—');
+    } else if (manual) {
+      showToast('最新版です（更新はありません）', 3000);
+    }
+  } else {
+    if (manual) showToast('ネット接続を確認できませんでした', 3000);
+    console.info('オフラインのため更新確認をスキップ');
+  }
+
+  if (manual && btn) { btn.disabled = false; btn.textContent = '🔄 更新を確認'; }
+}
+
+async function manualUpdateCheck() {
+  await performUpdateCheck(true);
+}
+
 function openManual() {
   const modal = document.getElementById('manual-modal');
   const frame = document.getElementById('manual-frame');
@@ -2350,7 +2681,6 @@ function goStats() {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('nav-stats').classList.add('active');
   renderStats();
-  renderMemoList();
   showScreen('stats', '学習統計', '');
 }
 
@@ -2760,6 +3090,7 @@ function showQuestion() {
   document.getElementById('submit-btn').disabled = true;
   document.getElementById('next-btn').style.display = 'none';
   document.getElementById('mute-btn').style.display = 'none';
+  document.getElementById('back-to-list-btn').style.display = 'none';
 
   let title = '問題演習';
   let subtitle = '';
@@ -2767,9 +3098,61 @@ function showQuestion() {
   else if (state.currentMode === 'subject') subtitle = `科目別: ${state.currentSubject}`;
   else if (state.currentMode === 'daily') subtitle = '今日の演習';
   else if (state.currentMode === 'exam_review') subtitle = '間違いを復習';
-  else if (state.currentMode === 'memo_review') subtitle = 'メモ・出題除外から確認';
+  else if (state.currentMode === 'memo_review') subtitle = 'メモ一覧';
+  else if (state.currentMode === 'muted_review') subtitle = '出題除外一覧';
+  else if (state.currentMode === 'search') subtitle = '検索結果';
 
   showScreen('question', title, subtitle);
+
+  // 解答・解説を自動表示するモード（search / memo_review / muted_review）
+  const autoAnswerModes = ['search', 'memo_review', 'muted_review'];
+  if (autoAnswerModes.includes(state.currentMode)) {
+    // 正解選択肢をハイライト
+    document.querySelectorAll('.choice').forEach(c => {
+      const origIdx = parseInt(c.dataset.origIdx);
+      if (q.correctAnswers.includes(origIdx)) c.classList.add('correct');
+    });
+
+    // バナー
+    const banner = document.getElementById('result-banner');
+    banner.style.display = 'block';
+    banner.className = 'result-banner skipped';
+    banner.textContent = '📖 解答・解説';
+
+    // 解説
+    const expDiv = document.getElementById('explanation-content');
+    if (q.explanation && q.explanation.trim()) {
+      expDiv.textContent = q.explanation;
+      expDiv.classList.remove('empty');
+    } else {
+      expDiv.innerHTML = '<span class="empty">解説は未入力です。</span>';
+      expDiv.classList.add('empty');
+    }
+    document.getElementById('answer-area').classList.add('show');
+    document.getElementById('memo-card').style.display = 'block';
+
+    // 解答ボタン非表示・次へ非表示・戻るボタン表示
+    document.getElementById('action-buttons').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+    document.getElementById('back-to-list-btn').style.display = 'block';
+    showMuteBtn(q.id);
+
+    state.isAnswered = true;
+  }
+}
+
+// 戻るボタンの処理：呼び元のリスト画面に戻る
+function backToList() {
+  const mode = state.currentMode;
+  if (mode === 'search') {
+    showScreen('search', '問題検索', '問題文・選択肢から検索');
+  } else if (mode === 'memo_review') {
+    goMemoList();
+  } else if (mode === 'muted_review') {
+    goMutedList();
+  } else {
+    goHome();
+  }
 }
 
 function selectChoice(div, origNum) {
@@ -2929,12 +3312,23 @@ async function saveMemo() {
 //=========================================================
 const MUTED_SUBJECT = '出題しない問題';
 
+// AI作成問題かどうかの判定（yearが数値以外）
+function isAiQuestion(q) {
+  return !q || isNaN(Number(q.year));
+}
+
 function showMuteBtn(qid) {
   const btn = document.getElementById('mute-btn');
   if (!btn) return;
   // 今日の演習・科目別演習のみ表示（本試験・復習モードは非表示）
-  const showModes = ['daily', 'subject'];
+  const showModes = ['daily', 'subject', 'review', 'memo_review', 'muted_review', 'exam_review', 'search'];
   if (!showModes.includes(state.currentMode)) {
+    btn.style.display = 'none';
+    return;
+  }
+  // AI作成問題は出題除外の対象外（本試験形式モード専用のため）
+  const qObj = state.currentQuestion;
+  if (qObj && qObj.id === qid && isAiQuestion(qObj)) {
     btn.style.display = 'none';
     return;
   }
@@ -2947,6 +3341,11 @@ function showMuteBtn(qid) {
 async function toggleMuteQuestion() {
   const q = state.currentQuestion;
   if (!q) return;
+  // AI作成問題は出題除外にできない
+  if (isAiQuestion(q)) {
+    showToast('AI作成問題は出題除外にできません');
+    return;
+  }
   if (!state.mutedQuestions) state.mutedQuestions = {};
 
   const isMuted = !!state.mutedQuestions[q.id];
@@ -2975,50 +3374,110 @@ function isMutedQuestion(q) {
 //=========================================================
 // メモ・出題除外 一覧
 //=========================================================
-async function renderMemoList() {
-  const container = document.getElementById('stats-memo-list');
-  if (!container) return;
+function buildQuestionListItem(id, showMemo, showMuted, onClickExtra) {
+  const masterById = {};
+  state.questions.forEach(q => { masterById[q.id] = q; });
+  const q = masterById[id];
+  const memo = state.memos[id] || '';
+  const isMuted = !!(state.mutedQuestions && state.mutedQuestions[id]);
+  const typeLabel = q ? (q.examType === 'amashi' ? 'あマ指' : 'はりきゅう') : '';
+  const yearLabel = q ? formatYearLabel(q.year) : '';
+  return `
+    <div onclick="${onClickExtra || ''}openMemoQuestion('${escapeHtml(id)}')" style="padding:12px;border-bottom:1px solid #eef4f8;cursor:pointer;transition:background 0.1s;" onmouseenter="this.style.background='#f5f7fa'" onmouseleave="this.style.background=''">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center;">
+        ${showMuted && isMuted ? '<span style="font-size:11px;background:#ffc107;color:#212529;padding:2px 8px;border-radius:10px;font-weight:600;">🚫 出題除外</span>' : ''}
+        ${showMemo && memo ? '<span style="font-size:11px;background:#2c5f7c;color:white;padding:2px 8px;border-radius:10px;">📝 メモあり</span>' : ''}
+        ${q ? `<span style="font-size:11px;color:#7a8a99;">${escapeHtml(typeLabel)} ${escapeHtml(yearLabel)} 問${q.questionNo}</span>` : `<span style="font-size:11px;color:#7a8a99;">ID: ${escapeHtml(id)}</span>`}
+      </div>
+      <div style="font-size:13px;color:#2c3e50;line-height:1.5;margin-bottom:${memo && showMemo ? '6px' : '0'};">${q ? escapeHtml(q.questionText.slice(0, 60)) + (q.questionText.length > 60 ? '…' : '') : '（問題データなし）'}</div>
+      ${showMemo && memo ? `<div style="font-size:12px;color:#8b6914;background:#fffbf0;padding:6px 8px;border-radius:6px;border-left:3px solid #ffc107;">${escapeHtml(memo.slice(0, 80))}${memo.length > 80 ? '…' : ''}</div>` : ''}
+    </div>`;
+}
 
-  // メモあり問題を収集
-  const memoIds = Object.entries(state.memos)
-    .filter(([, text]) => text && text.trim())
-    .map(([id]) => id);
-
-  // 出題除外問題を収集
-  const mutedIds = Object.keys(state.mutedQuestions || {});
-
-  // 合わせてユニーク化
-  const allIds = [...new Set([...memoIds, ...mutedIds])];
-
-  if (allIds.length === 0) {
-    container.innerHTML = '<div style="color:#7a8a99;text-align:center;padding:20px 0;">メモ・出題除外はありません</div>';
-    return;
-  }
-
-  // 問題マスタ引き当て
+function goMemoList() {
+  const excludeYears = state.settings.excludeYears || [];
   const masterById = {};
   state.questions.forEach(q => { masterById[q.id] = q; });
 
-  let html = '';
-  for (const id of allIds) {
+  const memoIds = Object.entries(state.memos)
+    .filter(([, text]) => text && text.trim())
+    .map(([id]) => id)
+    .filter(id => {
+      const q = masterById[id];
+      if (!q) return true; // 問題データ不明は表示しておく
+      if (isAiQuestion(q)) return false; // AI作成問題はメモ一覧に表示しない
+      const yr = Number(q.year);
+      return !excludeYears.includes(yr);
+    });
+
+  const container = document.getElementById('home-memo-list');
+  if (memoIds.length === 0) {
+    container.innerHTML = '<div style="color:#7a8a99;text-align:center;padding:20px 0;">メモはありません</div>';
+  } else {
+    container.innerHTML = memoIds.map(id => buildQuestionListItem(id, true, false, '')).join('');
+  }
+  showScreen('memo-list', 'メモ一覧', `${memoIds.length}件`);
+}
+
+function goMutedList() {
+  renderMutedList();
+  const mutedIds = Object.keys(state.mutedQuestions || {});
+  showScreen('muted-list', '出題除外一覧', `${mutedIds.length}件`);
+}
+
+function renderMutedList() {
+  const excludeYears = state.settings.excludeYears || [];
+  const mutedIds = Object.keys(state.mutedQuestions || {});
+  const container = document.getElementById('home-muted-list');
+
+  const masterById = {};
+  state.questions.forEach(q => { masterById[q.id] = q; });
+
+  // 除外年度の問題を非表示
+  const visibleIds = mutedIds.filter(id => {
     const q = masterById[id];
-    const memo = state.memos[id] || '';
-    const isMuted = !!(state.mutedQuestions && state.mutedQuestions[id]);
+    if (!q) return true;
+    const yr = Number(q.year);
+    return isNaN(yr) || !excludeYears.includes(yr);
+  });
+
+  if (visibleIds.length === 0) {
+    container.innerHTML = '<div style="color:#7a8a99;text-align:center;padding:20px 0;">出題除外はありません</div>';
+    return;
+  }
+
+  let html = '';
+  for (const id of visibleIds) {
+    const q = masterById[id];
     const typeLabel = q ? (q.examType === 'amashi' ? 'あマ指' : 'はりきゅう') : '';
     const yearLabel = q ? formatYearLabel(q.year) : '';
-
+    const memo = state.memos[id] || '';
     html += `
-      <div onclick="openMemoQuestion('${escapeHtml(id)}')" style="padding:12px;border-bottom:1px solid #eef4f8;cursor:pointer;transition:background 0.1s;" onmouseenter="this.style.background='#f5f7fa'" onmouseleave="this.style.background=''">
+      <div onclick="openMutedQuestion('${escapeHtml(id)}')" style="padding:12px;border-bottom:1px solid #eef4f8;cursor:pointer;transition:background 0.1s;" onmouseenter="this.style.background='#f5f7fa'" onmouseleave="this.style.background=''">
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center;">
-          ${isMuted ? '<span style="font-size:11px;background:#ffc107;color:#212529;padding:2px 8px;border-radius:10px;font-weight:600;">🚫 出題除外</span>' : ''}
-          ${memo ? '<span style="font-size:11px;background:#2c5f7c;color:white;padding:2px 8px;border-radius:10px;">📝 メモあり</span>' : ''}
+          <span style="font-size:11px;background:#ffc107;color:#212529;padding:2px 8px;border-radius:10px;font-weight:600;">🚫 出題除外</span>
           ${q ? `<span style="font-size:11px;color:#7a8a99;">${escapeHtml(typeLabel)} ${escapeHtml(yearLabel)} 問${q.questionNo}</span>` : `<span style="font-size:11px;color:#7a8a99;">ID: ${escapeHtml(id)}</span>`}
         </div>
         <div style="font-size:13px;color:#2c3e50;line-height:1.5;margin-bottom:${memo ? '6px' : '0'};">${q ? escapeHtml(q.questionText.slice(0, 60)) + (q.questionText.length > 60 ? '…' : '') : '（問題データなし）'}</div>
-        ${memo ? `<div style="font-size:12px;color:#8b6914;background:#fffbf0;padding:6px 8px;border-radius:6px;border-left:3px solid #ffc107;">${escapeHtml(memo.slice(0, 80))}${memo.length > 80 ? '…' : ''}</div>` : ''}
+        ${memo ? `<div style="font-size:12px;color:#8b6914;background:#fffbf0;padding:6px 8px;border-radius:6px;border-left:3px solid #ffc107;margin-bottom:0;">${escapeHtml(memo.slice(0, 80))}${memo.length > 80 ? '…' : ''}</div>` : ''}
       </div>`;
   }
   container.innerHTML = html;
+}
+
+async function unmuteQuestion(qid) {
+  if (!state.mutedQuestions) return;
+  delete state.mutedQuestions[qid];
+  try { await dbDelete('mutedQuestions', qid); } catch(e) {}
+  showToast('出題除外を解除しました');
+  renderMutedList();
+  // 一覧件数を更新
+  const count = Object.keys(state.mutedQuestions || {}).length;
+  document.getElementById('screen-subtitle').textContent = `${count}件`;
+}
+
+async function renderMemoList() {
+  // 後方互換のため残す（goStats内から呼ばれる場合に備え空関数化）
 }
 
 function openMemoQuestion(qid) {
@@ -3026,10 +3485,22 @@ function openMemoQuestion(qid) {
   state.questions.forEach(q => { masterById[q.id] = q; });
   const q = masterById[qid];
   if (!q) { showToast('問題データが見つかりません'); return; }
-  // メモ閲覧モードとして1問だけ出題
   state.questionQueue = [q];
   state.currentIndex = 0;
   state.currentMode = 'memo_review';
+  state.currentSubject = null;
+  state.skipProgressSave = true;
+  showQuestion();
+}
+
+function openMutedQuestion(qid) {
+  const masterById = {};
+  state.questions.forEach(q => { masterById[q.id] = q; });
+  const q = masterById[qid];
+  if (!q) { showToast('問題データが見つかりません'); return; }
+  state.questionQueue = [q];
+  state.currentIndex = 0;
+  state.currentMode = 'muted_review';
   state.currentSubject = null;
   state.skipProgressSave = true;
   showQuestion();
@@ -3072,27 +3543,63 @@ function renderYearCheckList(containerId, excludeYears) {
     return;
   }
   const typeLabels = { hari_kyu: 'はりきゅう', amashi: 'あマ指' };
-  let html = '';
-  let lastType = null;
+
+  // 試験種別ごとにグループ化
+  const groups = {};
   years.forEach(({ examType, year }) => {
-    if (examType !== lastType) {
-      html += `<div style="font-size:11px;color:#7a8a99;font-weight:600;margin:8px 4px 4px;letter-spacing:1px;">━ ${typeLabels[examType] || examType}</div>`;
-      lastType = examType;
-    }
-    const checked = excludeYears.includes(year) ? 'checked' : '';
-    html += `
-      <label class="daily-subject-row" style="padding:8px 4px;">
-        <input type="checkbox" ${checked} data-year="${year}" data-examtype="${examType}"
-          style="width:20px;height:20px;accent-color:#c0504d;flex-shrink:0;"
-          onchange="onYearExcludeChange(this, '${containerId}')">
-        <span class="name">第${year}回（${typeLabels[examType] || examType}）</span>
-      </label>`;
+    if (!groups[examType]) groups[examType] = [];
+    groups[examType].push(year);
   });
+
+  let html = '';
+  Object.entries(groups).forEach(([examType, examYears]) => {
+    const label = typeLabels[examType] || examType;
+    const groupId = `year-group-${examType}-${containerId}`;
+
+    // 全選択・全解除ボタン
+    html += `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 6px;">
+        <div style="font-size:12px;color:#7a8a99;font-weight:700;letter-spacing:1px;">━ ${label}</div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="selectAllYears('${groupId}','${containerId}',true)"
+            style="font-size:11px;padding:3px 10px;border:1px solid #c0504d;border-radius:6px;background:white;color:#c0504d;cursor:pointer;">
+            全除外
+          </button>
+          <button onclick="selectAllYears('${groupId}','${containerId}',false)"
+            style="font-size:11px;padding:3px 10px;border:1px solid #5a8fa8;border-radius:6px;background:white;color:#5a8fa8;cursor:pointer;">
+            全解除
+          </button>
+        </div>
+      </div>
+      <div id="${groupId}" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px;">`;
+
+    examYears.forEach(year => {
+      const checked = excludeYears.includes(year) ? 'checked' : '';
+      html += `
+        <label style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:${checked ? '#fdf0ee' : '#f5f7fa'};border:1px solid ${checked ? '#e8a090' : '#d4dde4'};border-radius:8px;cursor:pointer;font-size:13px;transition:all 0.15s;" id="year-label-${examType}-${year}">
+          <input type="checkbox" ${checked} data-year="${year}" data-examtype="${examType}"
+            style="width:18px;height:18px;accent-color:#c0504d;flex-shrink:0;"
+            onchange="onYearExcludeChange(this, '${containerId}')">
+          第${year}回
+        </label>`;
+    });
+
+    html += `</div>`;
+  });
+
   container.innerHTML = html;
 }
 
 function onYearExcludeChange(cb, containerId) {
-  // 同じcontainer内の全チェックボックスから除外年度を収集（設定画面用即時保存）
+  // ラベルの色を動的に更新
+  const year = cb.dataset.year;
+  const examType = cb.dataset.examtype;
+  const lbl = document.getElementById(`year-label-${examType}-${year}`);
+  if (lbl) {
+    lbl.style.background = cb.checked ? '#fdf0ee' : '#f5f7fa';
+    lbl.style.borderColor = cb.checked ? '#e8a090' : '#d4dde4';
+  }
+  // 設定に即時保存
   if (containerId === 'settings-year-list') {
     const allCbs = document.querySelectorAll('#settings-year-list input[type="checkbox"]');
     const excludeYears = [];
@@ -3100,6 +3607,16 @@ function onYearExcludeChange(cb, containerId) {
     updateSetting('excludeYears', excludeYears);
     updateHomeStats();
   }
+}
+
+// グループ内の全チェックボックスを一括ON/OFF
+function selectAllYears(groupId, containerId, checked) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.checked = checked;
+    onYearExcludeChange(cb, containerId);
+  });
 }
 
 function renderSettingsYearList() {
@@ -3115,6 +3632,7 @@ async function exportData() {
     exportedAt: new Date().toISOString(),
     progress: await dbGetAll('progress'),
     memos: await dbGetAll('memos'),
+    mutedQuestions: await dbGetAll('mutedQuestions'),
     settings: await dbGetAll('settings')
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -3143,6 +3661,11 @@ async function importData(event) {
     await dbClear('memos');
     if (data.progress) for (const p of data.progress) await dbPut('progress', p);
     if (data.memos) for (const m of data.memos) await dbPut('memos', m);
+    // 出題除外（旧バージョンのバックアップには含まれない。キーがある場合のみ復元）
+    if (Array.isArray(data.mutedQuestions)) {
+      await dbClear('mutedQuestions');
+      for (const m of data.mutedQuestions) await dbPut('mutedQuestions', m);
+    }
     if (data.settings) for (const s of data.settings) await dbPut('settings', s);
 
     showToast('インポートが完了しました');
@@ -3216,11 +3739,11 @@ document.getElementById('modal').addEventListener('click', (e) => {
 // [C] 制作者署名 - 方法3: 4文字hexチャンクを結合したUTF-8バイト列
 // ============================================================
 const _mC = (function(){
-  const _h = ['3735','e69c','9fe7','949f','e380','80e8','97a4','e69c',
-               'ac20','2f20','e5a4','a7e9','98aa','e8a1','8ce5','b2a1',
-               'e58c','bbe7','9982','e5b0','82e9','9680','e5ad','a6e6',
-               'a0a1','e995','b7e6','9f84','e6a0','a1e3','8080','e98d',
-               'bce7','81b8','e7a7','91'];
+  const _h = ['e5a4','a7e9','98aa','e8a1','8ce5','b2a1','e58c','bbe7',
+               '9982','e5b0','82e9','9680','e5ad','a6e6','a0a1','e995',
+               'b7e6','9f84','e6a0','a1e3','8080','e98d','bce7','81b8',
+               'e7a7','91e3','8080','3735','e69c','9fe7','949f','e380',
+               '80e8','97a4','e69c','ac'];
   const _bytes = _h.join('').match(/.{2}/g).map(x => parseInt(x, 16));
   return _bytes;
 })();
@@ -3254,31 +3777,21 @@ const _mC = (function(){
     if (_fromA !== _fromB || _fromB !== _fromC) { _halt(); return; }
 
     // SHA-256ハッシュ前16桁で追加検証
-    const _expected = '11d85e98375a598c';
+    const _expected = '7528e102a1c33dac';
     crypto.subtle.digest('SHA-256', new TextEncoder().encode(_fromA)).then(buf => {
       const _hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
       if (_hash.slice(0, 16) !== _expected) { _halt(); }
     });
 
     // [D] 設定画面の平文クレジット表記も照合
-    // 秘匿値は "氏名 / 所属" の形式。UI側の "制作者：氏名" と "所属" を順に検証する
+    // 秘匿値はUI表示文字列そのもの（1行）
     const _verifyPlainText = () => {
-      const _parts = _fromA.split(' / ');
-      if (_parts.length !== 2) { _halt(); return; }
-      const _expectedName = _parts[0];
-      const _expectedAffiliation = _parts[1];
-
       const _nameEl = document.getElementById('credit-author-name');
-      const _affEl = document.getElementById('credit-author-affiliation');
-      if (!_nameEl || !_affEl) { _halt(); return; }
+      if (!_nameEl) { _halt(); return; }
 
       // 「制作者：」または「制作者:」のプレフィックスを許容して除去
-      const _actualName = _nameEl.textContent.replace(/^\s*制作者\s*[：:]\s*/, '').trim();
-      const _actualAff = _affEl.textContent.trim();
-
-      if (_actualName !== _expectedName || _actualAff !== _expectedAffiliation) {
-        _halt();
-      }
+      const _actual = _nameEl.textContent.replace(/^\s*制作者\s*[：:]\s*/, '').trim();
+      if (_actual !== _fromA) { _halt(); }
     };
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', _verifyPlainText);
