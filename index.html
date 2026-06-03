@@ -2656,6 +2656,22 @@ async function refreshServiceWorker() {
   }
 }
 
+// ネットワーク上の index.html を取得し、その中の APP_VERSION を読み取る。
+// いま動いている定数 APP_VERSION ではなく「サーバ上の最新版」を知るために使う。
+async function fetchRemoteAppVersion() {
+  try {
+    const res = await fetch('./index.html?_=' + Date.now(), { cache: 'reload' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    // const APP_VERSION = '2026.6.3'; のような行から抽出
+    const m = text.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+    return m ? m[1] : null;
+  } catch (e) {
+    console.warn('リモートのAPP_VERSION取得に失敗:', e.message);
+    return null;
+  }
+}
+
 async function performUpdateCheck(manual = false) {
   const btn = document.getElementById('update-check-btn');
   if (manual && btn) { btn.disabled = true; btn.textContent = '🔄 確認中...'; }
@@ -2669,23 +2685,25 @@ async function performUpdateCheck(manual = false) {
   // 手動時はキャッシュを完全バイパスして必ずネットワークから取得
   const online = await loadQuestionData(manual);
 
+  // 手動時はネット上の index.html の APP_VERSION も取得（本体更新の検知用）
+  const remoteAppVer = manual ? await fetchRemoteAppVersion() : null;
+
   // 成功・失敗どちらでも lastUpdateCheckedAt を更新（次回48時間後）
   await dbPut('settings', { key: 'lastUpdateCheckedAt', value: new Date().toISOString() });
 
   if (online) {
-    const savedAppVer = await dbGet('settings', 'appVersion');
     const savedQVer   = await dbGet('settings', 'questionDataVersion');
-    const appVerOld   = savedAppVer ? savedAppVer.value : null;
     const qVerOld     = savedQVer   ? savedQVer.value   : null;
-    const appUpdated  = !appVerOld || compareVersion(APP_VERSION, appVerOld) > 0;
     const qUpdated    = QUESTION_DATA_VERSION && (!qVerOld || compareVersion(QUESTION_DATA_VERSION, qVerOld) > 0);
 
-    if (appUpdated || qUpdated) {
+    // 本体更新: サーバ上の index.html のバージョンが、いま動いている APP_VERSION より新しいか
+    const appUpdated = !!remoteAppVer && compareVersion(remoteAppVer, APP_VERSION) > 0;
+
+    if (qUpdated) {
       const tx = db.transaction('questions', 'readwrite');
       tx.objectStore('questions').clear();
       await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
       for (const q of BUNDLED_QUESTIONS) await dbPut('questions', q);
-      await dbPut('settings', { key: 'appVersion', value: APP_VERSION });
       if (QUESTION_DATA_VERSION)
         await dbPut('settings', { key: 'questionDataVersion', value: QUESTION_DATA_VERSION });
       state.questions = await dbGetAll('questions');
@@ -2693,20 +2711,34 @@ async function performUpdateCheck(manual = false) {
       // 設定画面のバージョン表示を更新
       const el = document.getElementById('setting-q-version');
       if (el) el.textContent = '問題データ: ver.' + (QUESTION_DATA_VERSION || '—');
+    }
 
-      // アプリ本体(index.html)に更新がある場合は、最新のHTML/JSを読み込むため
-      // 手動実行時はキャッシュを使わず強制リロードする
-      if (appUpdated && manual) {
-        showToast('最新版に更新します。再読み込みします…', 2000);
-        setTimeout(() => {
-          // クエリ付きで完全な再取得を促す（SW・ブラウザキャッシュ回避）
-          const u = new URL(window.location.href);
-          u.searchParams.set('_upd', Date.now());
-          window.location.replace(u.toString());
-        }, 1200);
-        return; // リロードするので以降の処理は不要
+    // アプリ本体(index.html)に更新がある場合は、最新のHTML/JSを読み込むため
+    // 手動実行時はキャッシュを使わず強制リロードする
+    if (appUpdated && manual) {
+      await dbPut('settings', { key: 'appVersion', value: remoteAppVer });
+      showToast(`最新版 ver.${remoteAppVer} に更新します。再読み込みします…`, 2000);
+      // リロード前にSWキャッシュを再クリアし、SW登録も解除して古い本体の再利用を防ぐ
+      await clearAllAppCaches();
+      if ('serviceWorker' in navigator) {
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        } catch (e) { console.warn('SW登録解除に失敗:', e.message); }
       }
+      setTimeout(() => {
+        // クエリ付きで完全な再取得を促す（SW・ブラウザキャッシュ回避）
+        const u = new URL(window.location.href);
+        u.searchParams.set('_upd', Date.now());
+        window.location.replace(u.toString());
+      }, 1200);
+      return; // リロードするので以降の処理は不要
+    }
 
+    // 本体は最新（または更新なし）なので、現行バージョンを記録
+    await dbPut('settings', { key: 'appVersion', value: APP_VERSION });
+
+    if (qUpdated) {
       showToast(`問題データを更新しました（ver.${QUESTION_DATA_VERSION || APP_VERSION}）`);
     } else if (manual) {
       showToast('最新版です（更新はありません）', 3000);
