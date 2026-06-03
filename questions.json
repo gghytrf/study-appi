@@ -171613,7 +171613,7 @@
     "subject": "臨床医学総論",
     "section": "AM",
     "questionText": "JCSで『刺激しても覚醒しない』状態が含まれる桁はどれか。",
-    "choice1": 0,
+    "choice1": "0桁",
     "choice2": "3桁",
     "choice3": "1桁",
     "choice4": "2桁",
