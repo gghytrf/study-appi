@@ -1,6 +1,6 @@
 // Service Worker - はり師きゅう師・あマ指 国試学習アプリ
 // キャッシュバージョン: アプリ更新時はここを変更してください
-const CACHE_VERSION = 'v2026.5.20';
+const CACHE_VERSION = 'v2026.6.3';
 const CACHE_NAME = 'study-app-' + CACHE_VERSION;
 
 // キャッシュ対象ファイル
@@ -18,6 +18,13 @@ const CACHE_FILES = [
 const CACHE_CDN = [
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
 ];
+
+// クライアント（index.html）からのメッセージで待機中SWを即時有効化
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 // インストール: キャッシュ対象ファイルを事前キャッシュ
 self.addEventListener('install', event => {

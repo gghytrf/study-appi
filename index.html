@@ -818,7 +818,7 @@
 
 //=========================================================
 // アプリバージョン（更新年月日）
-const APP_VERSION = '2026.6.1';
+const APP_VERSION = '2026.6.3';
 
 // [A] 75e69c9fe38080e897a4e69cac (識別定数)
 const _mA = (function(){
@@ -892,9 +892,13 @@ function normalizeQuestion(q, i) {
   };
 }
 
-async function loadQuestionData() {
+async function loadQuestionData(forceNetwork = false) {
   try {
-    const res = await fetch('./questions.json?_=' + Date.now(), { cache: 'no-cache' });
+    // forceNetwork時はService Worker・ブラウザキャッシュを完全にバイパスして取得
+    const opts = forceNetwork
+      ? { cache: 'reload' }   // 必ずネットワークから取得しキャッシュも更新
+      : { cache: 'no-cache' };
+    const res = await fetch('./questions.json?_=' + Date.now(), opts);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     BUNDLED_QUESTIONS = (json.questions || []).map(normalizeQuestion);
@@ -2617,11 +2621,53 @@ function goSettings() {
 //=========================================================
 // 更新確認（自動・手動共用）
 //=========================================================
+// Service Worker・ブラウザキャッシュを全削除する（手動更新確認時に使用）
+async function clearAllAppCaches() {
+  if (!('caches' in window)) return;
+  try {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter(k => k.startsWith('study-app-'))
+        .map(k => caches.delete(k))
+    );
+    console.info('アプリキャッシュを全削除しました');
+  } catch (e) {
+    console.warn('キャッシュ削除に失敗:', e.message);
+  }
+}
+
+// 待機中／インストール中のService Workerを即時有効化し、最新SWを取得し直す
+async function refreshServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) {
+      // 最新のsw.jsをネットワークから取得し直す
+      await reg.update();
+      // 待機中SWがあれば即時有効化を促す
+      if (reg.waiting) {
+        sessionStorage.setItem('forceSwReload', '1');
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+    }
+  } catch (e) {
+    console.warn('Service Worker更新に失敗:', e.message);
+  }
+}
+
 async function performUpdateCheck(manual = false) {
   const btn = document.getElementById('update-check-btn');
   if (manual && btn) { btn.disabled = true; btn.textContent = '🔄 確認中...'; }
 
-  const online = await loadQuestionData();
+  // 手動実行時はまずキャッシュを全削除し、SWも最新を取り直す
+  if (manual) {
+    await clearAllAppCaches();
+    await refreshServiceWorker();
+  }
+
+  // 手動時はキャッシュを完全バイパスして必ずネットワークから取得
+  const online = await loadQuestionData(manual);
 
   // 成功・失敗どちらでも lastUpdateCheckedAt を更新（次回48時間後）
   await dbPut('settings', { key: 'lastUpdateCheckedAt', value: new Date().toISOString() });
@@ -2644,10 +2690,24 @@ async function performUpdateCheck(manual = false) {
         await dbPut('settings', { key: 'questionDataVersion', value: QUESTION_DATA_VERSION });
       state.questions = await dbGetAll('questions');
       updateHomeStats();
-      showToast(`問題データを更新しました（ver.${QUESTION_DATA_VERSION || APP_VERSION}）`);
       // 設定画面のバージョン表示を更新
       const el = document.getElementById('setting-q-version');
       if (el) el.textContent = '問題データ: ver.' + (QUESTION_DATA_VERSION || '—');
+
+      // アプリ本体(index.html)に更新がある場合は、最新のHTML/JSを読み込むため
+      // 手動実行時はキャッシュを使わず強制リロードする
+      if (appUpdated && manual) {
+        showToast('最新版に更新します。再読み込みします…', 2000);
+        setTimeout(() => {
+          // クエリ付きで完全な再取得を促す（SW・ブラウザキャッシュ回避）
+          const u = new URL(window.location.href);
+          u.searchParams.set('_upd', Date.now());
+          window.location.replace(u.toString());
+        }, 1200);
+        return; // リロードするので以降の処理は不要
+      }
+
+      showToast(`問題データを更新しました（ver.${QUESTION_DATA_VERSION || APP_VERSION}）`);
     } else if (manual) {
       showToast('最新版です（更新はありません）', 3000);
     }
@@ -3806,6 +3866,17 @@ const _mC = (function(){
 
 // Service Worker 登録（PWA・オフライン対応）
 if ('serviceWorker' in navigator) {
+  // 新しいSWが制御を引き継いだら、手動更新時のみ一度だけリロード
+  let _swReloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (_swReloaded) return;
+    if (sessionStorage.getItem('forceSwReload') === '1') {
+      _swReloaded = true;
+      sessionStorage.removeItem('forceSwReload');
+      window.location.reload();
+    }
+  });
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
       .then(reg => {
