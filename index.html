@@ -697,7 +697,7 @@
       <h2>このアプリについて</h2>
       <div style="font-size: 13px; color: #4a5a6a; line-height: 1.7;">
         <p>はり師きゅう師・あマ指の国家試験対策学習アプリ</p>
-        <p style="margin-top: 8px;">アプリ: ver.2026.6.1</p>
+        <p style="margin-top: 8px;" id="setting-app-version">アプリ: 読み込み中...</p>
         <p style="margin-top: 4px;" id="setting-q-version">問題データ: 読み込み中...</p>
         <p style="margin-top: 8px;" id="credit-author-name">制作者：大阪行岡医療専門学校長柄校　鍼灸科　75期生　藤本</p>
       </div>
@@ -2608,6 +2608,11 @@ function goSettings() {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('nav-settings').classList.add('active');
   renderSettingsYearList();
+  // アプリ本体バージョンを表示（APP_VERSION と自動連動）
+  const appEl = document.getElementById('setting-app-version');
+  if (appEl) {
+    appEl.textContent = 'アプリ: ver.' + APP_VERSION;
+  }
   // 問題データバージョンを表示
   const el = document.getElementById('setting-q-version');
   if (el) {
