@@ -620,6 +620,7 @@
     </div>
 
     <div class="btn-row">
+      <button class="btn outline" onclick="reprintPaperSession()" style="flex: 1;">🖨️ 問題を再印刷</button>
       <button class="btn outline" onclick="confirmDeletePaperSession()" style="flex: 1;">🗑️ 削除</button>
       <button class="btn" onclick="submitPaperResult()" style="flex: 2;">採点して結果を見る</button>
     </div>
@@ -818,7 +819,7 @@
 
 //=========================================================
 // アプリバージョン（更新年月日）
-const APP_VERSION = '2026.6.3';
+const APP_VERSION = '2026.6.6';
 
 // [A] 75e69c9fe38080e897a4e69cac (識別定数)
 const _mA = (function(){
@@ -1443,6 +1444,10 @@ function startExamMode() {
       yearFilter = (q) => isNaN(Number(q.year));
       yearLabel = 'AI作成問題(全)';
     }
+  } else {
+    // 全範囲からランダム出題: yearが数値(=実際の過去問年度)のもののみ。
+    // AI作成問題(yearが文字列)はここに混入させず、AI作成問題出題でのみ出題する。
+    yearFilter = (q) => !isNaN(Number(q.year));
   }
 
   // 科目構成に従って問題抽出
@@ -1814,6 +1819,13 @@ async function generateExamPaper(questions, examType, source, yearLabel, shuffle
     console.error('セッション保存失敗:', e);
   }
 
+  // 問題用紙HTMLを生成して印刷プレビューを表示
+  showExamPaperPreview(questions, typeLabel, titleSuffix, shuffleChoices, choiceOrders);
+}
+
+// 問題用紙HTMLを組み立てて印刷プレビューを表示(新規出題・再印刷の共通処理)
+// mode: 'new'(新規出題、閉じるとホームへ) / 'reprint'(再印刷、閉じると結果入力画面へ戻る)
+function showExamPaperPreview(questions, typeLabel, titleSuffix, shuffleChoices, choiceOrders, mode = 'new') {
   // 問題セクションごとに整理
   const amQs = questions.filter(q => q.section === 'AM');
   const pmQs = questions.filter(q => q.section === 'PM');
@@ -1946,10 +1958,13 @@ ${renderSection('午後(PM)', pmQs, amQs.length + 1, amQs.length)}
 
   const toolbar = document.createElement('div');
   toolbar.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 16px;background:#2c5f7c;color:white;flex-shrink:0;';
+  const closeAction = mode === 'reprint'
+    ? "document.body.removeChild(document.getElementById('print-overlay'));"
+    : "document.body.removeChild(document.getElementById('print-overlay'));goHome();showToast('印刷後、ホームから結果入力できます',3000);";
   toolbar.innerHTML = `
     <span style="font-size:15px;font-weight:600;flex:1;">📄 問題用紙プレビュー（${questions.length}問）</span>
     <button onclick="document.getElementById('print-frame').contentWindow.print()" style="padding:8px 16px;background:white;color:#2c5f7c;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">🖨️ 印刷</button>
-    <button onclick="document.body.removeChild(document.getElementById('print-overlay'));goHome();showToast('印刷後、ホームから結果入力できます',3000);" style="padding:8px 16px;background:rgba(255,255,255,0.2);color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;">✕ 閉じる</button>
+    <button onclick="${closeAction}" style="padding:8px 16px;background:rgba(255,255,255,0.2);color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;">✕ 閉じる</button>
   `;
 
   const iframe = document.createElement('iframe');
@@ -2123,6 +2138,47 @@ async function paperClearAll() {
   session.results = {};
   await dbPut('paperSessions', session);
   renderPaperInput();
+}
+
+// 結果入力画面から、保存済みセッションの問題用紙を再印刷
+function reprintPaperSession() {
+  const session = paperState.session;
+  if (!session) return;
+
+  // セッションのitems(出題順)から問題本体をstate.questionsで復元
+  const byId = {};
+  state.questions.forEach(q => { byId[q.id] = q; });
+
+  const questions = [];
+  const choiceOrders = {};
+  const missing = [];
+  session.items.forEach((it, idx) => {
+    const q = byId[it.questionId];
+    if (!q) { missing.push(it.questionId); return; }
+    questions.push(q);
+    const newIdx = questions.length - 1;
+    choiceOrders[newIdx] = {
+      order: it.choiceOrder || [0, 1, 2, 3],
+      mappedCorrect: it.mappedCorrect || q.correctAnswers
+    };
+  });
+
+  if (questions.length === 0) {
+    showToast('問題データが見つかりませんでした(データ更新で削除された可能性があります)');
+    return;
+  }
+  if (missing.length > 0) {
+    showToast(`${missing.length}問は現在のデータに存在せず除外しました`, 3000);
+  }
+
+  showExamPaperPreview(
+    questions,
+    session.typeLabel,
+    session.titleSuffix,
+    session.shuffleChoices,
+    choiceOrders,
+    'reprint'
+  );
 }
 
 function confirmDeletePaperSession() {

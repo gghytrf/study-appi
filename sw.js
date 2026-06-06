@@ -1,6 +1,6 @@
 // Service Worker - はり師きゅう師・あマ指 国試学習アプリ
 // キャッシュバージョン: アプリ更新時はここを変更してください
-const CACHE_VERSION = 'v2026.6.3';
+const CACHE_VERSION = 'v2026.6.6';
 const CACHE_NAME = 'study-app-' + CACHE_VERSION;
 
 // キャッシュ対象ファイル
