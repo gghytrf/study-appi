@@ -1,47 +1,34 @@
-// Service Worker - はり師きゅう師・あマ指 国試学習アプリ
-// キャッシュバージョン: アプリ更新時はここを変更してください
-const CACHE_VERSION = 'v2026.6.6';
+// Service Worker - 国試学習アプリ（移行・バックアップ専用版）
+// キャッシュバージョン: バージョンを変えると古いキャッシュ（旧index.html・questions.json）が破棄されます
+const CACHE_VERSION = 'v2026.7.23-retire';
 const CACHE_NAME = 'study-app-' + CACHE_VERSION;
 
-// キャッシュ対象ファイル
+// キャッシュ対象ファイル（questions.json は意図的に含めません）
 const CACHE_FILES = [
   './',
   './index.html',
-  './questions.json',
   './manifest.json',
   './manual.html',
   './icons/icon-192.png',
   './icons/icon-512.png',
 ];
 
-// 外部CDN（jsPDF）もキャッシュ
-const CACHE_CDN = [
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-];
-
-// クライアント（index.html）からのメッセージで待機中SWを即時有効化
+// クライアントからのメッセージで待機中SWを即時有効化
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 });
 
-// インストール: キャッシュ対象ファイルを事前キャッシュ
+// インストール: 移行画面のファイルを事前キャッシュ
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(async cache => {
-      await cache.addAll(CACHE_FILES);
-      for (const url of CACHE_CDN) {
-        try { await cache.add(url); }
-        catch (e) { console.warn('CDNキャッシュ失敗（オフライン時は正常）:', url); }
-      }
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(CACHE_FILES))
   );
-  // 待機中のSWをすぐに有効化（古いSWを即座に置き換える）
   self.skipWaiting();
 });
 
-// アクティベート: 古いキャッシュを削除して即座に全クライアントを制御
+// アクティベート: 古いキャッシュ（questions.json を含む旧キャッシュ）を全削除
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -53,27 +40,37 @@ self.addEventListener('activate', event => {
             return caches.delete(key);
           })
       )
-    ).then(() => self.clients.claim()) // 全クライアントを即座に制御下に
+    ).then(() => self.clients.claim())
   );
 });
 
 // フェッチ戦略:
-//   index.html / sw.js → ネット優先（常に最新を取得）→ 失敗時キャッシュ
-//   questions.json     → ネット優先（常に最新を取得）→ 失敗時キャッシュ
+//   questions.json     → キャッシュを一切使わず、キャッシュにも残さない（問題データの配布・保持を防ぐ）
+//   index.html / sw.js → ネット優先（常に最新の移行画面を取得）→ 失敗時キャッシュ
 //   その他             → キャッシュ優先 → なければネット取得してキャッシュ更新
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   const path = url.pathname;
 
-  // ③ index.html・sw.js・questions.json はネット優先（ブラウザキャッシュを上書き）
+  // ① questions.json はネット専用。取得できてもキャッシュしない。
+  if (path.endsWith('questions.json')) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .catch(() => new Response('{"questions":[]}', {
+          headers: { 'Content-Type': 'application/json' }
+        }))
+    );
+    return;
+  }
+
+  // ② index.html・sw.js はネット優先（移行画面を確実に最新へ）
   const networkFirst = path.endsWith('index.html') ||
                        path.endsWith('sw.js') ||
-                       path.endsWith('questions.json') ||
                        path === url.origin + '/';
 
   if (networkFirst) {
     event.respondWith(
-      fetch(event.request, { cache: 'no-store' }) // ブラウザキャッシュを使わずネット取得
+      fetch(event.request, { cache: 'no-store' })
         .then(res => {
           if (res.ok) {
             const resClone = res.clone();
@@ -81,15 +78,12 @@ self.addEventListener('fetch', event => {
           }
           return res;
         })
-        .catch(() => {
-          // オフライン時はService Workerキャッシュから返す
-          return caches.match(event.request);
-        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }
 
-  // その他（アイコン・マニュアル・CDN等）はキャッシュ優先
+  // ③ その他（アイコン・マニュアル等）はキャッシュ優先
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
